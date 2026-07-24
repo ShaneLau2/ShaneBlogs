@@ -18,7 +18,7 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 			"https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
 		],
 	},
-			local: {
+	local: {
 		playlist: [
 			{
 				name: "Wiz Khalifa See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack",
@@ -27,13 +27,13 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 				cover: "",
 				lrc: "",
 			},
-{
+			{
 				name: "Charlie Puth We Don't Talk Anymore (feat. Selena Gomez) [Official Video]",
 				artist: "Unknown",
 				url: "/assets/music/Charlie Puth - We Dont Talk Anymore (feat Selena Gomez) Official Video.mp3",
 				cover: "",
 				lrc: "",
-			}
+			},
 		],
 	},
 };
