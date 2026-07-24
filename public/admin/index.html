@@ -266,7 +266,10 @@ async function ghDelete(path) {
 async function readFile(repoPath) {
   try {
     const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
-    return { content: atob(data.content.replace(/\n/g, "")), sha: data.sha };
+    // Properly decode UTF-8 base64 content
+    const raw = atob(data.content.replace(/\n/g, ""));
+    const content = decodeURIComponent(escape(raw));
+    return { content, sha: data.sha };
   } catch (err) {
     return { content: "", sha: null };
   }
@@ -274,9 +277,12 @@ async function readFile(repoPath) {
 
 async function writeFile(repoPath, content, message) {
   const existing = await readFile(repoPath);
+  // Properly encode UTF-8 content to base64
+  const utf8Bytes = unescape(encodeURIComponent(content));
+  const b64 = btoa(utf8Bytes);
   return ghPut("/repos/" + config.repo + "/contents/" + repoPath, {
     message: message || "chore: update via admin panel",
-    content: btoa(unescape(encodeURIComponent(content))),
+    content: b64,
     sha: existing.sha || undefined,
     branch: config.branch,
   });
@@ -299,7 +305,7 @@ async function listFiles(repoPath) {
   try {
     const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
     if (!Array.isArray(data)) return [];
-    return data.filter(f => f.type === "file").map(f => f.name);
+    return data.filter(f => f.type === "file" && f.name !== ".gitkeep").map(f => f.name);
   } catch {
     return [];
   }
