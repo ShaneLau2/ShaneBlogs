@@ -267,6 +267,55 @@ pinned: true  # 置顶
 | `pnpm astro ...`           | 执行 `astro add`, `astro check` 等指令 |
 | `pnpm astro --help`        | 显示 Astro CLI 帮助                    |
 
+## 🛠 后台管理系统
+
+项目包含两套后台管理面板，方便管理博客内容。
+
+### 本地 Admin Panel
+
+运行在 `localhost:3000` 的本地后台，功能最完整。
+
+```bash
+pnpm admin                # 启动（默认密码 admin）
+ADMIN_PASSWORD=密码 pnpm admin  # 自定义密码
+```
+
+**功能：**
+| 页面 | 功能 |
+|------|------|
+| 📊 Dashboard | 博客概览和 Git 状态 |
+| 📄 Posts | 创建/编辑/删除文章（Markdown 编辑器） |
+| 💬 Dynamics | 发布/管理动态 |
+| 📋 Pages | 编辑 about/friends/guestbook 页面 |
+| 📢 Announcement | 编辑公告内容 |
+| ⚙️ Config | 编辑配置文件 |
+| 🎵 Music | 上传音乐文件 + mp3juice 搜索下载 + 自动加播放列表 |
+| 🚀 Deploy | 一键 git commit & push 部署 |
+
+密码存储在 `public/admin/config.json`（SHA-256 哈希），本地 admin 自动读取。
+
+### 在线 Admin Panel
+
+部署在 GitHub Pages 的静态后台，无需本地启动，任何设备可访问。
+
+```
+https://你的用户名.github.io/仓库名/admin/
+```
+
+**功能：** 除音乐搜索下载外，与本地版基本一致。通过 GitHub API 直接操作仓库文件。
+
+**首次使用：**
+1. 设置密码哈希：`pnpm admin:set-pwd 你的密码`，将输出的哈希填入 `public/admin/config.json`
+2. 准备 GitHub Personal Access Token（需 `repo` 权限），登录时填入
+3. 推送到 GitHub，访问 `/admin/` 路径
+
+### 音乐管理
+
+支持两种方式添加音乐到博客播放列表：
+
+1. **本地上传** — 选 MP3 文件，自动加入播放列表
+2. **搜索下载** — 在 admin 搜索框中搜歌，点 Download，自动下载并加入播放列表（通过 mp3juice 搜索引擎 + yt-dlp 下载）
+
 ## 🙏 致谢
 
 非常感谢 [saicaca](https://github.com/saicaca) 开发的 [fuwari](https://github.com/saicaca/fuwari) 模板，Firefly 就是基于这个模板二次开发
