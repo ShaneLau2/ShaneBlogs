@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firefly Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
+.sidebar{width:220px;background:#1e293b;color:#94a3b8;position:fixed;height:100vh;display:none;flex-direction:column}
+.sidebar.open{display:flex}
+.sidebar h1{padding:1.25rem;color:#fff;font-size:1rem;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar nav a{display:flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;color:#94a3b8;text-decoration:none;font-size:.875rem;cursor:pointer}
+.sidebar nav a:hover,.sidebar nav a.active{background:rgba(255,255,255,0.08);color:#fff}
+.main{margin-left:0;padding:1rem;max-width:100%}
+.main.with-sidebar{margin-left:220px}
+.page-header{margin-bottom:1rem}
+.page-header h2{font-size:1.25rem}
+.page-header p{color:#64748b;font-size:.8rem}
+.card{background:#fff;border-radius:.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:1rem;margin-bottom:1rem}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid #e2e8f0}
+.card-header h3{font-size:.95rem}
+.btn{display:inline-flex;align-items:center;gap:.25rem;padding:.375rem .75rem;border-radius:.375rem;font-size:.8rem;border:none;cursor:pointer}
+.btn-primary{background:#0891b2;color:#fff}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-success{background:#22c55e;color:#fff}
+.btn-outline{background:transparent;border:1px solid #e2e8f0;color:#1e293b}
+.btn-sm{padding:.25rem .5rem;font-size:.75rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.form-group{margin-bottom:.75rem}
+.form-group label{display:block;font-size:.8rem;font-weight:500;margin-bottom:.25rem}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:.4rem .6rem;border:1px solid #e2e8f0;border-radius:.375rem;font-size:.8rem;font-family:inherit}
+.form-group textarea{min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.form-actions{display:flex;gap:.5rem;margin-top:.75rem}
+.table{width:100%;border-collapse:collapse;font-size:.8rem}
+.table th,.table td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid #e2e8f0}
+.table th{font-weight:600;color:#64748b;font-size:.7rem}
+.actions{display:flex;gap:.25rem}
+.tag{display:inline-block;padding:.1rem .4rem;border-radius:999px;font-size:.7rem;background:#e0f2fe;color:#0369a1;margin:.1rem}
+.badge{padding:.1rem .4rem;border-radius:999px;font-size:.65rem}
+.badge-success{background:#dcfce7;color:#166534}
+.badge-warning{background:#fef3c7;color:#92400e}
+.badge-info{background:#e0f2fe;color:#0369a1}
+.toast-container{position:fixed;top:.5rem;right:.5rem;z-index:999}
+.toast{padding:.5rem .75rem;border-radius:.375rem;margin-bottom:.25rem;font-size:.8rem;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.toast-success{background:#dcfce7;color:#166534}
+.toast-error{background:#fee2e2;color:#991b1b}
+.loading{text-align:center;padding:2rem;color:#64748b}
+.empty-state{text-align:center;padding:2rem;color:#64748b}
+.empty-state .icon{font-size:2rem;margin-bottom:.5rem}
+.table-wrap{overflow-x:auto}
+.markdown-hint{font-size:.7rem;color:#64748b;margin-top:.2rem}
+.hamburger{display:block;background:none;border:none;font-size:1.5rem;cursor:pointer;padding:.25rem;margin-bottom:.5rem}
+@media(min-width:768px){.sidebar{display:flex}.hamburger{display:none}.main{padding:1.25rem}}
+</style>
+</head>
+<body>
+<div class="sidebar" id="sidebar">
+  <h1>📝 Firefly Admin</h1>
+  <nav>
+    <a href="#" data-page="dashboard" class="active">📊 Dashboard</a>
+    <a href="#" data-page="posts">📄 Posts</a>
+    <a href="#" data-page="dynamics">💬 Dynamics</a>
+    <a href="#" data-page="spec">📋 Pages</a>
+    <a href="#" data-page="config">⚙️ Config</a>
+    <a href="#" data-page="deploy">🚀 Deploy</a>
+  </nav>
+  <div style="margin-top:auto;padding:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:.75rem;color:#64748b;">
+    <div id="login-status"></div>
+  </div>
+</div>
+
+<div class="main" id="main">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="page-header">
+    <h2 id="page-title">Login</h2>
+    <p id="page-desc">Enter your password and GitHub token</p>
+  </div>
+  <div id="page-content"></div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ====== Config ======
+const GITHUB_API = "https://api.github.com";
+let config = {};
+let ghToken = localStorage.getItem("gh_token") || "";
+let authed = sessionStorage.getItem("admin_authed") === "true";
+let currentPage = "dashboard";
+
+// ====== Init ======
+(async function init() {
+  try {
+    const res = await fetch("config.json");
+    config = await res.json();
+    document.title = config.title;
+  } catch (e) {
+    document.getElementById("page-content").innerHTML = '<div class="empty-state">Failed to load config.json</div>';
+    return;
+  }
+  renderApp();
+})();
+
+function renderApp() {
+  if (!authed) {
+    renderLogin();
+    return;
+  }
+  document.getElementById("login-status").textContent = "✅ Authenticated";
+  setupNav();
+  navigateTo(currentPage);
+}
+
+// ====== Toggle ======
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("main").classList.toggle("with-sidebar");
+}
+
+// ====== Toast ======
+function toast(msg, type) {
+  const el = document.createElement("div");
+  el.className = "toast toast-" + type;
+  el.textContent = msg;
+  document.getElementById("toast-container").appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ====== Login ======
+function renderLogin() {
+  const el = document.getElementById("page-content");
+  document.getElementById("page-title").textContent = "🔐 Login";
+  document.getElementById("page-desc").textContent = "";
+  el.innerHTML = `
+    <div style="max-width:400px;margin:2rem auto;">
+      <div class="card">
+        <div class="card-header"><h3>Admin Login</h3></div>
+        <form onsubmit="doLogin(event)">
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-pwd" placeholder="Admin password" autofocus>
+          </div>
+          <div class="form-group">
+            <label>GitHub Personal Access Token</label>
+            <input type="password" id="login-token" placeholder="ghp_..." value="${ghToken}">
+            <div class="markdown-hint">Needs repo scope. <a href="https://github.com/settings/tokens" target="_blank">Create one →</a></div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+          <div id="login-error" style="color:#ef4444;font-size:.8rem;margin-top:.5rem;display:none"></div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const pwd = document.getElementById("login-pwd").value;
+  const token = document.getElementById("login-token").value.trim();
+  const errEl = document.getElementById("login-error");
+
+  // Hash password and compare
+  const hash = await sha256(pwd);
+  if (hash !== config.passwordHash) {
+    errEl.textContent = "Wrong password";
+    errEl.style.display = "block";
+    return;
+  }
+
+  // Test GitHub token
+  if (token) {
+    try {
+      const res = await fetch(GITHUB_API + "/repos/" + config.repo, {
+        headers: { "Authorization": "token " + token }
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+    } catch (err) {
+      errEl.textContent = "GitHub token invalid or lacks permissions: " + err.message;
+      errEl.style.display = "block";
+      return;
+    }
+    localStorage.setItem("gh_token", token);
+    ghToken = token;
+  } else if (!ghToken) {
+    errEl.textContent = "GitHub token is required";
+    errEl.style.display = "block";
+    return;
+  }
+
+  sessionStorage.setItem("admin_authed", "true");
+  authed = true;
+  renderApp();
+}
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+// ====== Navigation ======
+function setupNav() {
+  document.querySelectorAll("[data-page]").forEach(a => {
+    a.onclick = (e) => {
+      e.preventDefault();
+      navigateTo(a.dataset.page);
+    };
+  });
+}
+
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll("[data-page]").forEach(a => a.classList.remove("active"));
+  const activeLink = document.querySelector("[data-page='" + page + "']");
+  if (activeLink) activeLink.classList.add("active");
+
+  const content = document.getElementById("page-content");
+  const title = document.getElementById("page-title");
+  const desc = document.getElementById("page-desc");
+  content.innerHTML = '<div class="loading">Loading</div>';
+
+  switch(page) {
+    case "dashboard": renderDashboard(content, title, desc); break;
+    case "posts": renderPosts(content, title, desc); break;
+    case "dynamics": renderDynamics(content, title, desc); break;
+    case "spec": renderSpec(content, title, desc); break;
+    case "config": renderConfig(content, title, desc); break;
+    case "deploy": renderDeploy(content, title, desc); break;
+  }
+}
+
+// ====== GitHub API Helpers ======
+async function gh(path, options) {
+  const res = await fetch(GITHUB_API + path, {
+    headers: {
+      "Authorization": "token " + ghToken,
+      "Accept": "application/vnd.github.v3+json",
+      "Content-Type": "application/json",
+      ...(options?.headers || {}),
+    },
+    ...options,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || ("HTTP " + res.status));
+  return data;
+}
+
+async function ghGet(path) { return gh(path); }
+
+async function ghPut(path, body) {
+  return gh(path, { method: "PUT", body: JSON.stringify(body) });
+}
+
+async function ghDelete(path) {
+  return gh(path, { method: "DELETE" });
+}
+
+async function readFile(repoPath) {
+  try {
+    const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
+    return { content: atob(data.content.replace(/\n/g, "")), sha: data.sha };
+  } catch (err) {
+    return { content: "", sha: null };
+  }
+}
+
+async function writeFile(repoPath, content, message) {
+  const existing = await readFile(repoPath);
+  return ghPut("/repos/" + config.repo + "/contents/" + repoPath, {
+    message: message || "chore: update via admin panel",
+    content: btoa(unescape(encodeURIComponent(content))),
+    sha: existing.sha || undefined,
+    branch: config.branch,
+  });
+}
+
+async function deleteFile(repoPath, message) {
+  const existing = await readFile(repoPath);
+  if (!existing.sha) return false;
+  await ghDelete("/repos/" + config.repo + "/contents/" + repoPath, {
+    data: {
+      message: message || "chore: delete via admin panel",
+      sha: existing.sha,
+      branch: config.branch,
+    }
+  });
+  return true;
+}
+
+async function listFiles(repoPath) {
+  try {
+    const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
+    if (!Array.isArray(data)) return [];
+    return data.filter(f => f.type === "file").map(f => f.name);
+  } catch {
+    return [];
+  }
+}
+
+// ====== Dashboard ======
+async function renderDashboard(el, title, desc) {
+  title.textContent = "📊 Dashboard";
+  desc.textContent = "Manage your blog via GitHub API";
+  try {
+    const repo = await ghGet("/repos/" + config.repo);
+    const posts = await listFiles("src/content/posts");
+    const dynamics = await listFiles("src/content/dynamic");
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1rem;">
+        <div class="card"><div style="font-size:1.5rem;font-weight:700;color:#0891b2">${posts.length}</div><div style="font-size:.8rem;color:#64748b">Posts</div></div>
+        <div class="card"><div style="font-size:1.5rem;font-weight:700;color:#0891b2">${dynamics.length}</div><div style="font-size:.8rem;color:#64748b">Dynamics</div></div>
+        <div class="card"><div style="font-size:1.5rem;font-weight:700;color:#0891b2">${repo.stargazers_count}</div><div style="font-size:.8rem;color:#64748b">Stars</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Repository Info</h3></div>
+        <p style="font-size:.8rem;"><strong>${config.repo}</strong> (${config.branch})</p>
+        <p style="font-size:.8rem;color:#64748b;margin-top:.25rem;">${repo.description || ""}</p>
+      </div>
+    `;
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>' + err.message + '</p></div>';
+  }
+}
+
+// ====== Posts ======
+async function renderPosts(el, title, desc) {
+  title.textContent = "📄 Posts";
+  desc.textContent = "Manage blog posts";
+  try {
+    let files = await listFiles("src/content/posts");
+    const posts = [];
+    for (const f of files) {
+      if (!f.endsWith(".md") && !f.endsWith(".mdx")) continue;
+      posts.push({ slug: f.replace(/\.(md|mdx)$/, ""), file: f });
+    }
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>Posts (${posts.length})</h3>
+          <button class="btn btn-primary btn-sm" onclick="showPostForm()">+ New</button>
+        </div>
+        ${posts.length === 0 ? '<div class="empty-state">No posts</div>' :
+          '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
+          posts.map(p => '<tr><td>' + escapeHtml(p.file) + '</td><td class="actions">' +
+            '<button class="btn btn-outline btn-sm" onclick="showPostForm(\'' + p.slug + '\')">✏️</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="deletePost(\'' + p.slug + '\')">🗑️</button></td></tr>').join("") +
+          '</tbody></table></div>'}
+      </div>
+      <div id="post-form"></div>
+    `;
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+  }
+}
+
+async function showPostForm(slug) {
+  let fm = { title: "", description: "", tags: [], category: "", draft: true, published: new Date().toISOString().split("T")[0] };
+  let body = "";
+  let isEdit = !!slug;
+  if (slug) {
+    try {
+      const ext = (await readFile("src/content/posts/" + slug + ".md")).content ? ".md" : ".mdx";
+      const data = await readFile("src/content/posts/" + slug + (ext === ".mdx" ? ".mdx" : ".md"));
+      const parsed = parseFM(data.content);
+      fm = parsed.frontmatter;
+      body = parsed.body;
+    } catch (e) { toast("Load failed: " + e.message, "error"); return; }
+  }
+  const container = document.getElementById("post-form");
+  container.innerHTML = '<div class="card"><div class="card-header"><h3>' + (isEdit ? "✏️ Edit" : "📝 New") + '</h3></div>' +
+    '<form onsubmit="savePost(event, \'' + (slug || "") + '\')">' +
+    (isEdit ? "" : '<div class="form-group"><label>Slug</label><input name="slug" placeholder="my-post" required></div>') +
+    '<div class="form-group"><label>Title</label><input name="title" value="' + escapeHtml(fm.title) + '" required></div>' +
+    '<div class="form-row"><div class="form-group"><label>Date</label><input name="published" type="date" value="' + fm.published + '"></div>' +
+    '<div class="form-group"><label>Category</label><input name="category" value="' + escapeHtml(fm.category || "") + '"></div></div>' +
+    '<div class="form-group"><label>Tags (comma)</label><input name="tags" value="' + ((fm.tags || []).join(", ")) + '"></div>' +
+    '<div class="form-group"><label>Description</label><textarea name="description" rows="2">' + escapeHtml(fm.description || "") + '</textarea></div>' +
+    '<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">' +
+    '<label style="font-size:.8rem;"><input type="checkbox" name="draft" ' + (fm.draft ? "checked" : "") + '> Draft</label>' +
+    '<label style="font-size:.8rem;"><input type="checkbox" name="pinned" ' + (fm.pinned ? "checked" : "") + '> Pinned</label></div>' +
+    '<div class="form-group"><label>Content (Markdown)</label><textarea name="body" rows="16" style="font-family:monospace;font-size:.75rem;">' + escapeHtml(body) + '</textarea></div>' +
+    '<div class="form-actions"><button type="submit" class="btn btn-primary">' + (isEdit ? "Update" : "Create") + '</button>' +
+    '<button type="button" class="btn btn-outline" onclick="document.getElementById(\'post-form\').innerHTML=\'\'">Cancel</button></div></form></div>';
+  container.scrollIntoView({ behavior: "smooth" });
+}
+
+async function savePost(e, slug) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const newSlug = fd.get("slug") || slug;
+  const title = fd.get("title");
+  const frontmatter = {
+    title,
+    published: fd.get("published") || new Date().toISOString().split("T")[0],
+    description: fd.get("description") || "",
+    tags: (fd.get("tags") || "").split(",").map(t => t.trim()).filter(Boolean),
+    category: fd.get("category") || "",
+    draft: fd.get("draft") !== null,
+    pinned: fd.get("pinned") !== null,
+  };
+  const body = fd.get("body") || "";
+  const content = buildFM(frontmatter, body);
+  try {
+    await writeFile("src/content/posts/" + newSlug + ".md", content, (slug ? "Update" : "Create") + " post: " + title);
+    toast("Post saved!", "success");
+    renderPosts(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+async function deletePost(slug) {
+  if (!confirm("Delete " + slug + "?")) return;
+  try {
+    const deleted = await deleteFile("src/content/posts/" + slug + ".md") || await deleteFile("src/content/posts/" + slug + ".mdx");
+    toast(deleted ? "Deleted" : "Not found", deleted ? "success" : "error");
+    renderPosts(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+// ====== Dynamics ======
+async function renderDynamics(el, title, desc) {
+  title.textContent = "💬 Dynamics";
+  desc.textContent = "";
+  try {
+    const files = await listFiles("src/content/dynamic");
+    el.innerHTML = '<div class="card"><div class="card-header"><h3>New Dynamic</h3></div>' +
+      '<form onsubmit="saveDynamic(event)"><div class="form-group"><textarea name="content" rows="3" placeholder="What\'s on your mind?" required></textarea></div>' +
+      '<div class="form-actions"><label style="font-size:.8rem;display:flex;align-items:center;gap:.25rem;"><input type="checkbox" name="pinned"> Pinned</label>' +
+      '<button type="submit" class="btn btn-primary btn-sm">Post</button></div></form></div>' +
+      '<div class="card"><div class="card-header"><h3>Dynamics (' + files.length + ')</h3></div>' +
+      (files.length === 0 ? '<div class="empty-state">None</div>' :
+      '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
+      files.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" onclick="deleteDynamic(\'' + f + '\')">🗑️</button></td></tr>').join("") +
+      '</tbody></table></div>') + '</div>';
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+  }
+}
+
+async function saveDynamic(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const content = fd.get("content");
+  const pinned = fd.get("pinned") !== null;
+  const now = new Date();
+  const slug = now.getFullYear() + "-" + pad(now.getMonth()+1) + "-" + pad(now.getDate()) + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+  const fm = { published: slug.slice(0,10) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()), pinned };
+  try {
+    await writeFile("src/content/dynamic/" + slug + ".md", buildFM(fm, content), "New dynamic");
+    toast("Posted!", "success");
+    renderDynamics(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+async function deleteDynamic(file) {
+  if (!confirm("Delete " + file + "?")) return;
+  try {
+    await deleteFile("src/content/dynamic/" + file);
+    toast("Deleted", "success");
+    renderDynamics(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+// ====== Spec Pages ======
+async function renderSpec(el, title, desc) {
+  title.textContent = "📋 Pages";
+  desc.textContent = "Edit about, friends, guestbook";
+  try {
+    const files = await listFiles("src/content/spec");
+    el.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">' +
+      files.map(f => '<button class="btn btn-outline btn-sm" onclick="editSpec(\'' + f + '\')">' + escapeHtml(f) + '</button>').join("") +
+      '</div><div id="spec-form"></div>';
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+  }
+}
+
+async function editSpec(file) {
+  try {
+    const data = await readFile("src/content/spec/" + file);
+    const parsed = parseFM(data.content);
+    const container = document.getElementById("spec-form");
+    container.innerHTML = '<div class="card"><div class="card-header"><h3>✏️ ' + file + '</h3></div>' +
+      '<form onsubmit="saveSpec(event, \'' + file + '\')">' +
+      '<div class="form-group"><label>Title</label><input name="title" value="' + escapeHtml(parsed.frontmatter.title || "") + '"></div>' +
+      '<div class="form-group"><label>Content</label><textarea name="body" rows="20" style="font-family:monospace;font-size:.75rem;">' + escapeHtml(parsed.body) + '</textarea></div>' +
+      '<div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form></div>';
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+async function saveSpec(e, file) {
+  e.preventDefault();
+  const title = e.target.querySelector("[name='title']").value;
+  const body = e.target.querySelector("[name='body']").value;
+  try {
+    const existing = await readFile("src/content/spec/" + file);
+    const parsed = parseFM(existing.content);
+    const fm = { ...parsed.frontmatter, title: title || parsed.frontmatter.title };
+    await writeFile("src/content/spec/" + file, buildFM(fm, body), "Update " + file);
+    toast("Saved!", "success");
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+// ====== Config ======
+async function renderConfig(el, title, desc) {
+  title.textContent = "⚙️ Config";
+  desc.textContent = "Edit config files";
+  const files = ["siteConfig.ts","profileConfig.ts","friendsConfig.ts","announcementConfig.ts","musicConfig.ts","sidebarConfig.ts","backgroundWallpaper.ts"];
+  el.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">' +
+    files.map(f => '<button class="btn btn-outline btn-sm" onclick="editConfig(\'' + f + '\')">' + f + '</button>').join("") +
+    '</div><div id="config-editor"></div>';
+}
+
+async function editConfig(file) {
+  try {
+    const data = await readFile("src/config/" + file);
+    const container = document.getElementById("config-editor");
+    container.innerHTML = '<div class="card"><div class="card-header"><h3>' + file + '</h3></div>' +
+      '<form onsubmit="saveConfig(event, \'' + file + '\')">' +
+      '<div class="form-group"><textarea name="content" rows="24" style="font-family:monospace;font-size:.75rem;">' + escapeHtml(data.content) + '</textarea></div>' +
+      '<div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form></div>';
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+async function saveConfig(e, file) {
+  e.preventDefault();
+  const content = e.target.querySelector("[name='content']").value;
+  try {
+    await writeFile("src/config/" + file, content, "Update " + file);
+    toast("Config saved! Redeploy to see changes.", "success");
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+// ====== Deploy ======
+async function renderDeploy(el, title, desc) {
+  title.textContent = "🚀 Deploy";
+  desc.textContent = "Commit changes and trigger GitHub Pages build";
+  try {
+    const repo = await ghGet("/repos/" + config.repo + "/git/ref/heads/" + config.branch);
+    const commit = await ghGet("/repos/" + config.repo + "/git/commits/" + repo.object.sha);
+    el.innerHTML = '<div class="card"><div class="card-header"><h3>Git Status</h3></div>' +
+      '<p style="font-size:.8rem;"><strong>Branch:</strong> ' + config.branch + '</p>' +
+      '<p style="font-size:.8rem;color:#64748b;margin-top:.25rem;">Latest: ' + commit.message.split("\n")[0] + '</p></div>' +
+      '<div class="card"><div class="card-header"><h3>Deploy</h3></div>' +
+      '<div class="form-group"><label>Commit message</label>' +
+      '<input type="text" id="deploy-msg" value="chore: update blog content" style="width:100%;padding:.4rem .6rem;border:1px solid #e2e8f0;border-radius:.375rem;font-size:.8rem;"></div>' +
+      '<button class="btn btn-success" onclick="doDeploy()">🚀 Commit & Push</button>' +
+      '<div id="deploy-result" style="margin-top:.75rem;"></div></div>';
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+  }
+}
+
+async function doDeploy() {
+  const btn = event.target;
+  btn.disabled = true;
+  const resultDiv = document.getElementById("deploy-result");
+  resultDiv.innerHTML = '<div class="loading">Working...</div>';
+
+  try {
+    // Create a commit with all changes via the API
+    const msg = document.getElementById("deploy-msg").value || "chore: update blog content";
+    
+    // Trigger GitHub Actions workflow
+    const workflowRes = await fetch(GITHUB_API + "/repos/" + config.repo + "/actions/workflows/deploy.yml/dispatches", {
+      method: "POST",
+      headers: {
+        "Authorization": "token " + ghToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ref: config.branch }),
+    });
+
+    if (!workflowRes.ok) {
+      const err = await workflowRes.json().catch(() => ({}));
+      throw new Error(err.message || "HTTP " + workflowRes.status);
+    }
+
+    resultDiv.innerHTML = '<div style="color:#22c55e;font-size:.875rem;">✅ Deploy triggered! GitHub Actions will build and deploy.</div>' +
+      '<p style="font-size:.75rem;color:#64748b;margin-top:.5rem;">Check progress: <a href="https://github.com/' + config.repo + '/actions" target="_blank">View Actions →</a></p>';
+    toast("Deploy triggered!", "success");
+  } catch (err) {
+    resultDiv.innerHTML = '<div style="color:#ef4444;font-size:.875rem;">❌ ' + err.message + '</div>';
+  }
+  btn.disabled = false;
+}
+
+// ====== FM Parser ======
+function parseFM(content) {
+  const m = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!m) return { frontmatter: {}, body: content };
+  const fm = {};
+  for (const line of m[1].split("\n")) {
+    const ci = line.indexOf(":");
+    if (ci === -1) continue;
+    const k = line.slice(0, ci).trim();
+    let v = line.slice(ci + 1).trim();
+    if (v === "true") v = true; else if (v === "false") v = false;
+    else if (/^\d+$/.test(v)) v = parseInt(v);
+    else if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
+    else if (v.startsWith("[") && v.endsWith("]")) {
+      v = v.slice(1, -1).split(",").map(s => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+    }
+    fm[k] = v;
+  }
+  return { frontmatter: fm, body: m[2].trim() };
+}
+
+function buildFM(fm, body) {
+  const lines = Object.entries(fm).map(([k, v]) => {
+    if (Array.isArray(v)) return v.length === 0 ? k + ": []" : k + ": [" + v.map(x => '"' + x + '"').join(", ") + "]";
+    if (typeof v === "string" && /[:\s\[\]]/.test(v)) return k + ': "' + v + '"';
+    return k + ": " + v;
+  });
+  return "---\n" + lines.join("\n") + "\n---\n\n" + body;
+}
+
+function pad(n) { return String(n).padStart(2, "0"); }
+
+function escapeHtml(s) {
+  if (!s) return "";
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+</script>
+</body>
+</html>

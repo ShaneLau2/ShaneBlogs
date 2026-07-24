@@ -196,6 +196,10 @@ async function api(path, options = {}) {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
+  if (res.status === 401) {
+    window.location.href = '/login.html';
+    throw new Error('Unauthorized');
+  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
@@ -695,6 +699,15 @@ async function renderMusic(el, title, desc) {
         </form>
       </div>
       <div class="card">
+        <div class="card-header"><h3>Search Music</h3></div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Search YouTube for songs, download MP3, and auto-add to playlist.</p>
+        <div style="display:flex;gap:0.5rem;">
+          <input type="text" id="music-search-input" placeholder="Search for a song..." style="flex:1;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:0.375rem;font-size:0.875rem;">
+          <button class="btn btn-primary" onclick="searchMusic()">Search</button>
+        </div>
+        <div id="music-search-results" style="margin-top:0.75rem;"></div>
+      </div>
+      <div class="card">
         <div class="card-header"><h3>Music Files (${music.length})</h3></div>
         ${music.length === 0 ? '<div class="empty-state">No music files uploaded</div>' :
           '<div class="table-wrap"><table class="table">' +
@@ -737,6 +750,51 @@ async function renderMusic(el, title, desc) {
     });
   } catch (err) {
     el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${err.message}</p></div>`;
+  }
+}
+
+async function searchMusic() {
+  const q = document.getElementById('music-search-input').value.trim();
+  if (!q) return;
+  const div = document.getElementById('music-search-results');
+  div.innerHTML = '<div class="loading">Searching</div>';
+  try {
+    const data = await api('/api/music/search?q=' + encodeURIComponent(q));
+    const r = data.results || [];
+    if (r.length === 0) {
+      div.innerHTML = '<div class="empty-state">No results. <a href="https://mp3juice.sc/?q=' + encodeURIComponent(q) + '" target="_blank">Try mp3juice.sc</a></div>';
+      return;
+    }
+    div.innerHTML = '<div style="margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-muted);">' + r.length + ' results</div><div class="table-wrap"><table class="table"><thead><tr><th>Title</th><th>Duration</th><th>Actions</th></tr></thead><tbody>' +
+      r.map(function(v) {
+        return '<tr><td><strong>' + escapeHtml(v.title) + '</strong><br><small>' + escapeHtml(v.artist) + '</small></td><td>' + v.durationStr + '</td><td class="actions">' +
+          '<button class="btn btn-primary btn-sm" onclick="downloadMusic(\'' + v.id + '\', \'' + escapeHtml(v.title).replace(/'/g, "\\'") + '\', \'' + escapeHtml(v.artist).replace(/'/g, "\\'") + '\' )">Download</button>' +
+          '<a class="btn btn-outline btn-sm" href="https://mp3juice.sc/?q=' + encodeURIComponent(v.title + ' ' + v.artist) + '" target="_blank">mp3juice</a></td></tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  } catch (err) {
+    div.innerHTML = '<div class="empty-state">Error: ' + err.message + '. <a href="https://mp3juice.sc/?q=' + encodeURIComponent(q) + '" target="_blank">Try mp3juice.sc</a></div>';
+  }
+}
+
+async function downloadMusic(videoId, title, artist) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Downloading...';
+  try {
+    const result = await api('/api/music/download', { method: 'POST', body: JSON.stringify({ videoId: videoId, title: title, artist: artist }) });
+    if (result.success) {
+      toast('Downloaded and added to playlist! Go to Deploy.', 'success');
+      renderPage('music');
+    } else {
+      toast('Download failed', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Download';
+    }
+  } catch (err) {
+    toast('Download failed: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Download';
   }
 }
 

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firefly Admin</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-card { background: #fff; border-radius: 0.75rem; box-shadow: 0 4px 24px rgba(0,0,0,0.1); padding: 2rem; width: 360px; max-width: 90vw; }
+  .login-card h1 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+  .login-card p { color: #64748b; font-size: 0.875rem; margin-bottom: 1.5rem; }
+  .login-card input { width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 0.875rem; margin-bottom: 1rem; }
+  .login-card input:focus { outline: none; border-color: #0891b2; box-shadow: 0 0 0 2px rgba(8,145,178,0.15); }
+  .login-card button { width: 100%; padding: 0.625rem; background: #0891b2; color: #fff; border: none; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+  .login-card button:hover { background: #0e7490; }
+  .login-card .error { color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <h1>🔐 Firefly Admin</h1>
+  <p>Enter the admin password to continue</p>
+  <form id="login-form">
+    <input type="password" id="password" placeholder="Password" autofocus>
+    <button type="submit">Login</button>
+    <div class="error" id="error-msg">Wrong password</div>
+  </form>
+</div>
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.cookie = 'admin_token=' + data.token + '; path=/';
+      window.location.href = '/';
+    } else {
+      document.getElementById('error-msg').style.display = 'block';
+    }
+  } catch (err) {
+    document.getElementById('error-msg').textContent = 'Connection error';
+    document.getElementById('error-msg').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
