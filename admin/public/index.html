@@ -792,7 +792,13 @@ async function downloadMusic(videoId, title, artist) {
       btn.textContent = 'Download';
     }
   } catch (err) {
-    toast('Download failed: ' + err.message, 'error');
+    if (err.message && err.message.includes('bot')) {
+      toast('YouTube blocked the download. Use mp3juice to download instead.', 'error');
+      // Open mp3juice in a new tab
+      window.open('https://mp3juice.sc/?q=' + encodeURIComponent(title + ' ' + artist), '_blank');
+    } else {
+      toast('Download failed: ' + err.message, 'error');
+    }
     btn.disabled = false;
     btn.textContent = 'Download';
   }

@@ -103,7 +103,13 @@ router.post("/download", async (req, res) => {
 		});
 	} catch (err) {
 		// Clean up partial download on error
-		res.status(500).json({ error: `Download failed: ${err.message}` });
+		const isBotError = err.message?.includes("Sign in") || err.message?.includes("bot") || err.message?.includes("confirm");
+		res.status(500).json({
+			error: isBotError
+				? "YouTube blocked the download (bot detection). Use the mp3juice button next to each search result to download instead."
+				: `Download failed: ${err.message}`,
+			botBlocked: isBotError,
+		});
 	}
 });
 
