@@ -669,42 +669,64 @@ async function renderMusic(el, title, desc) {
       <div class="card">
         <div class="card-header"><h3>Upload Music</h3></div>
         <form id="music-upload-form">
-          <div class="form-group">
-            <label>Audio File (mp3, flac, wav, ogg)</label>
-            <input type="file" name="audio" accept=".mp3,.flac,.wav,.ogg,.m4a">
+          <input type="hidden" name="name" id="new-song-name" value="">
+          <input type="hidden" name="artist" id="new-song-artist" value="">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Song Name</label>
+              <input type="text" id="song-name-input" placeholder="Song title" required>
+            </div>
+            <div class="form-group">
+              <label>Artist</label>
+              <input type="text" id="artist-input" placeholder="Artist name">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Cover Art (optional, webp/png/jpg)</label>
-            <input type="file" name="cover" accept=".webp,.png,.jpg,.jpeg,.avif">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Audio File (mp3, flac, wav, ogg)</label>
+              <input type="file" name="audio" accept=".mp3,.flac,.wav,.ogg,.m4a" required>
+            </div>
+            <div class="form-group">
+              <label>Cover Art (optional, webp/png/jpg)</label>
+              <input type="file" name="cover" accept=".webp,.png,.jpg,.jpeg,.avif">
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+          <button type="submit" class="btn btn-primary btn-sm">Upload & Add to Playlist</button>
         </form>
       </div>
       <div class="card">
         <div class="card-header"><h3>Music Files (${music.length})</h3></div>
         ${music.length === 0 ? '<div class="empty-state">No music files uploaded</div>' :
-          `<div class="table-wrap"><table class="table">
-            <thead><tr><th>File</th><th>Actions</th></tr></thead>
-            <tbody>${music.map(f => `<tr><td>${escapeHtml(f)}</td><td><button class="btn btn-danger btn-sm" onclick="deleteMusic('${f}')">🗑️</button></td></tr>`).join('')}</tbody>
-          </table></div>`
+          '<div class="table-wrap"><table class="table">' +
+            '<thead><tr><th>File</th><th>Actions</th></tr></thead>' +
+            '<tbody>' + music.map(function(f) {
+              return '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + encodeURIComponent(f) + '\')">🗑️</button></td></tr>';
+            }).join('') + '</tbody>' +
+          '</table></div>'
         }
       </div>
-      ${covers.length > 0 ? `<div class="card">
-        <div class="card-header"><h3>Cover Art (${covers.length})</h3></div>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          ${covers.map(c => `<div style="text-align:center;"><img src="/assets/music/cover/${c}" style="width:80px;height:80px;object-fit:cover;border-radius:0.25rem;"><p style="font-size:0.7rem;margin-top:0.25rem;">${c}</p></div>`).join('')}
-        </div>
-      </div>` : ''}
+      ${covers.length > 0 ? '<div class="card">' +
+        '<div class="card-header"><h3>Cover Art (' + covers.length + ')</h3></div>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          covers.map(function(c) {
+            return '<div style="text-align:center;"><img src=\"/assets/music/cover/' + c + '\" style=\"width:80px;height:80px;object-fit:cover;border-radius:0.25rem;\"><p style=\"font-size:0.7rem;margin-top:0.25rem;\">' + escapeHtml(c) + '</p></div>';
+          }).join('') +
+        '</div>' +
+      '</div>' : ''}
     `;
 
     document.getElementById('music-upload-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
+      const songName = document.getElementById('song-name-input').value.trim();
+      const artist = document.getElementById('artist-input').value.trim() || 'Unknown';
+      formData.set('name', songName);
+      formData.set('artist', artist);
       try {
-        const res = await fetch('/api/music/upload', { method: 'POST', body: formData });
+        const res = await fetch('/api/music/upload-and-add', { method: 'POST', body: formData });
         const result = await res.json();
         if (result.success) {
-          toast('Uploaded! Don\'t forget to update musicConfig.ts', 'success');
+          toast('Uploaded and added to playlist! Go to Deploy to publish.', 'success');
           renderPage('music');
         } else {
           toast('Upload failed', 'error');

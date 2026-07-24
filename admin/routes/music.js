@@ -3,6 +3,7 @@ import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readFile, writeFile } from "../utils/file-utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
@@ -46,6 +47,53 @@ router.post("/upload", upload.fields([{ name: "audio", maxCount: 1 }, { name: "c
 		const result = {};
 		if (req.files?.audio) result.audio = req.files.audio[0].originalname;
 		if (req.files?.cover) result.cover = req.files.cover[0].originalname;
+		res.json({ success: true, ...result });
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// Upload music + auto-add to config playlist
+router.post("/upload-and-add", upload.fields([{ name: "audio", maxCount: 1 }, { name: "cover", maxCount: 1 }]), (req, res) => {
+	try {
+		const result = {};
+		if (req.files?.audio) result.audio = req.files.audio[0].originalname;
+		if (req.files?.cover) result.cover = req.files.cover[0].originalname;
+
+		const songName = req.body.name || result.audio?.replace(/\.[^.]+$/, "") || "Unknown";
+		const artist = req.body.artist || "Unknown";
+
+		// Build playlist entry
+		const entry = {
+			name: songName,
+			artist: artist,
+			url: "/assets/music/" + result.audio,
+			cover: result.cover ? "/assets/music/cover/" + result.cover : "",
+			lrc: "",
+		};
+
+		// Read and update musicConfig.ts
+		const configPath = "src/config/musicConfig.ts";
+		const configContent = readFile(configPath);
+
+		// Find the playlist array in the local section
+		const playlistRegex = /(playlist:\s*\[)([\s\S]*?)(\])/;
+		const match = configContent.match(playlistRegex);
+
+		if (match) {
+			const existingItems = match[2].trim();
+			const entryJson = JSON.stringify(entry, null, 2)
+				.replace(/\n/g, "\n      ");
+			const newEntry = existingItems
+				? `\n      ${entryJson},${match[2]}`
+				: `\n      ${entryJson},${match[2]}`;
+			const newPlaylist = `playlist: [${newEntry}\n    ]`;
+			const updated = configContent.replace(playlistRegex, newPlaylist);
+
+			writeFile(configPath, updated);
+			result.configUpdated = true;
+		}
+
 		res.json({ success: true, ...result });
 	} catch (err) {
 		res.status(500).json({ error: err.message });

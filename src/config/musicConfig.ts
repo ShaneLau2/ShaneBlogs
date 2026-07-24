@@ -46,6 +46,14 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	// 2. 或者直接填入歌词字符串内容
 	// lrc: "[00:00.00]歌词内容...",
 	local: {
-		playlist: [],
+		playlist: [
+      {
+        "name": "We Don't talk anymore",
+        "artist": "Charlie Puth",
+        "url": "/assets/music/Charlie Puth - We Don't Talk Anymore (feat. Selena Gomez) [Official Video].mp3",
+        "cover": "",
+        "lrc": ""
+      },
+    ],
 	},
 };
