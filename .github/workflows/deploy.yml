@@ -43,14 +43,19 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      - name: Debug paths
+        run: |
+          echo "base_url: ${{ steps.pages.outputs.base_url }}"
+          echo "base_path: ${{ steps.pages.outputs.base_path }}"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build the site
         run: pnpm build
         env:
-          # Override site URL for GitHub Pages deployment
           ASTRO_SITE_URL: ${{ steps.pages.outputs.base_url }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
