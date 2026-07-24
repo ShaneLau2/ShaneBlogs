@@ -63,9 +63,10 @@ const adapter = process.env.CF_WORKERS
 
 // https://astro.build/config
 export default defineConfig({
-	site: siteConfig.site_url,
+	site: process.env.ASTRO_SITE_URL || siteConfig.site_url,
 
-	base: "/",
+	// GitHub Pages sets BASE_PATH via actions/configure-pages; fall back to "/" for dev
+	base: process.env.BASE_PATH || "/",
 	trailingSlash: "always",
 
 	// 字体配置 - 只加载实际使用的字体，跳过未引用的以加快构建

@@ -28,6 +28,9 @@ yarn.lock
 
 # ide
 .idea
+
+# admin panel
+admin/node_modules/
 *.iml
 .claude
 
