@@ -98,6 +98,11 @@ let currentPage = "dashboard";
     const res = await fetch("config.json");
     config = await res.json();
     document.title = config.title;
+    // Auto-open sidebar on desktop
+    if (window.innerWidth >= 768) {
+      document.getElementById("sidebar").classList.add("open");
+      document.getElementById("main").classList.add("with-sidebar");
+    }
   } catch (e) {
     document.getElementById("page-content").innerHTML = '<div class="empty-state">Failed to load config.json</div>';
     return;
