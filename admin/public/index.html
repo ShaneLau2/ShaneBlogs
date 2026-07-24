@@ -677,21 +677,11 @@ async function renderMusic(el, title, desc) {
           <input type="hidden" name="artist" id="new-song-artist" value="">
           <div class="form-row">
             <div class="form-group">
-              <label>Song Name</label>
-              <input type="text" id="song-name-input" placeholder="Song title" required>
-            </div>
-            <div class="form-group">
-              <label>Artist</label>
-              <input type="text" id="artist-input" placeholder="Artist name">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
               <label>Audio File (mp3, flac, wav, ogg)</label>
               <input type="file" name="audio" accept=".mp3,.flac,.wav,.ogg,.m4a" required>
             </div>
             <div class="form-group">
-              <label>Cover Art (optional, webp/png/jpg)</label>
+              <label>Cover Art (optional)</label>
               <input type="file" name="cover" accept=".webp,.png,.jpg,.jpeg,.avif">
             </div>
           </div>
@@ -713,7 +703,7 @@ async function renderMusic(el, title, desc) {
           '<div class="table-wrap"><table class="table">' +
             '<thead><tr><th>File</th><th>Actions</th></tr></thead>' +
             '<tbody>' + music.map(function(f) {
-              return '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + encodeURIComponent(f) + '\')">🗑️</button></td></tr>';
+              return '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" data-file="' + escapeHtml(f).replace(/"/g, "&quot;") + '" onclick="deleteMusic(this.dataset.file)">🗑️</button></td></tr>';
             }).join('') + '</tbody>' +
           '</table></div>'
         }
@@ -731,8 +721,11 @@ async function renderMusic(el, title, desc) {
     document.getElementById('music-upload-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      const songName = document.getElementById('song-name-input').value.trim();
-      const artist = document.getElementById('artist-input').value.trim() || 'Unknown';
+      const file = formData.get('audio');
+      // Auto-detect name from filename
+      const rawName = file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+      const songName = rawName || 'Unknown';
+      const artist = 'Unknown';
       formData.set('name', songName);
       formData.set('artist', artist);
       try {
@@ -757,32 +750,31 @@ async function searchMusic() {
   const q = document.getElementById('music-search-input').value.trim();
   if (!q) return;
   const div = document.getElementById('music-search-results');
-  div.innerHTML = '<div class="loading">Searching</div>';
+  div.innerHTML = '<div class="loading">Searching mp3juice...</div>';
   try {
-    const data = await api('/api/music/search?q=' + encodeURIComponent(q));
+    const data = await api('/api/music/mp3juice-search?q=' + encodeURIComponent(q));
     const r = data.results || [];
     if (r.length === 0) {
-      div.innerHTML = '<div class="empty-state">No results. <a href="https://mp3juice.sc/?q=' + encodeURIComponent(q) + '" target="_blank">Try mp3juice.sc</a></div>';
+      div.innerHTML = '<div class="empty-state">No results found</div>';
       return;
     }
-    div.innerHTML = '<div style="margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-muted);">' + r.length + ' results</div><div class="table-wrap"><table class="table"><thead><tr><th>Title</th><th>Duration</th><th>Actions</th></tr></thead><tbody>' +
+    div.innerHTML = '<div style="margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-muted);">' + r.length + ' results from mp3juice</div><div class="table-wrap"><table class="table"><thead><tr><th>Title</th><th>Duration</th><th>Actions</th></tr></thead><tbody>' +
       r.map(function(v) {
-        return '<tr><td><strong>' + escapeHtml(v.title) + '</strong><br><small>' + escapeHtml(v.artist) + '</small></td><td>' + v.durationStr + '</td><td class="actions">' +
-          '<button class="btn btn-primary btn-sm" onclick="downloadMusic(\'' + v.id + '\', \'' + escapeHtml(v.title).replace(/'/g, "\\'") + '\', \'' + escapeHtml(v.artist).replace(/'/g, "\\'") + '\' )">Download</button>' +
-          '<a class="btn btn-outline btn-sm" href="https://mp3juice.sc/?q=' + encodeURIComponent(v.title + ' ' + v.artist) + '" target="_blank">mp3juice</a></td></tr>';
+        return '<tr><td><strong>' + escapeHtml(v.title) + '</strong></td><td>' + (v.duration || '') + '</td><td class="actions">' +
+          '<button class="btn btn-primary btn-sm" onclick="downloadMusic(\'' + v.id + '\', \'' + escapeHtml(v.title).replace(/'/g, "\\'") + '\')">Download</button></td></tr>';
       }).join('') +
       '</tbody></table></div>';
   } catch (err) {
-    div.innerHTML = '<div class="empty-state">Error: ' + err.message + '. <a href="https://mp3juice.sc/?q=' + encodeURIComponent(q) + '" target="_blank">Try mp3juice.sc</a></div>';
+    div.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
   }
 }
 
-async function downloadMusic(videoId, title, artist) {
+async function downloadMusic(videoId, title) {
   const btn = event.target;
   btn.disabled = true;
   btn.textContent = 'Downloading...';
   try {
-    const result = await api('/api/music/download', { method: 'POST', body: JSON.stringify({ videoId: videoId, title: title, artist: artist }) });
+    const result = await api('/api/music/download', { method: 'POST', body: JSON.stringify({ videoId: videoId, title: title }) });
     if (result.success) {
       toast('Downloaded and added to playlist! Go to Deploy.', 'success');
       renderPage('music');
@@ -792,13 +784,7 @@ async function downloadMusic(videoId, title, artist) {
       btn.textContent = 'Download';
     }
   } catch (err) {
-    if (err.message && err.message.includes('bot')) {
-      toast('YouTube blocked the download. Use mp3juice to download instead.', 'error');
-      // Open mp3juice in a new tab
-      window.open('https://mp3juice.sc/?q=' + encodeURIComponent(title + ' ' + artist), '_blank');
-    } else {
-      toast('Download failed: ' + err.message, 'error');
-    }
+    toast('Download failed: ' + err.message, 'error');
     btn.disabled = false;
     btn.textContent = 'Download';
   }

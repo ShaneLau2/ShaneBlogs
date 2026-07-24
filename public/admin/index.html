@@ -691,16 +691,14 @@ async function renderMusic(el, title, desc) {
     el.innerHTML = '<div class="card"><div class="card-header"><h3>Upload Music</h3></div>' +
       '<p style="font-size:.8rem;color:#64748b;margin-bottom:.75rem;">Upload MP3 files (max ~10MB via GitHub API). After upload, edit the playlist below.</p>' +
       '<form onsubmit="uploadMusic(event)">' +
-      '<div class="form-row"><div class="form-group"><label>Song Name</label><input name="name" placeholder="Song title" required></div>' +
-      '<div class="form-group"><label>Artist</label><input name="artist" placeholder="Artist name"></div></div>' +
-      '<div class="form-group"><label>MP3 File</label><input type="file" name="audio" accept=".mp3" required></div>' +
+      '<div class="form-group"><label>MP3 File</label><input type="file" name="audio" accept=".mp3,.flac,.wav,.ogg" required></div>' +
       '<div id="upload-progress" style="display:none;margin-bottom:.5rem;"><div style="height:4px;background:#e2e8f0;border-radius:999px;overflow:hidden;"><div id="upload-bar" style="height:100%;width:0%;background:#0891b2;transition:width .3s;"></div></div></div>' +
       '<button type="submit" class="btn btn-primary btn-sm">Upload</button></form></div>' +
 
       '<div class="card"><div class="card-header"><h3>Music Files (' + audioFiles.length + ')</h3></div>' +
       (audioFiles.length === 0 ? '<div class="empty-state">No music files</div>' :
       '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
-      audioFiles.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" onclick="deleteMusicFile(\'public/assets/music/' + f + '\')">🗑️</button></td></tr>').join("") +
+      audioFiles.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" data-path="public/assets/music/' + escapeHtml(f).replace(/"/g, "&quot;") + '" onclick="deleteMusicFile(this.dataset.path)">🗑️</button></td></tr>').join("") +
       '</tbody></table></div>') + '</div>' +
 
       (covers.length > 0 ? '<div class="card"><div class="card-header"><h3>Covers (' + covers.length + ')</h3></div>' +
@@ -720,8 +718,14 @@ async function uploadMusic(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const file = fd.get("audio");
-  const name = fd.get("name") || file.name.replace(/\.[^.]+$/, "");
-  const artist = fd.get("artist") || "Unknown";
+  // Auto-detect name from filename
+  const rawName = file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ").replace(/\s+/g, " ").trim();
+  const name = rawName || "Unknown";
+  const artist = "Unknown";
+  // Sanitize filename for safe config entries
+  const safeName = file.name.replace(/\.[^.]+$/, "").replace(/[^\w\s\-()]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  const ext = file.name.match(/\.[^.]+$/)?.[0] || ".mp3";
+  const cleanFile = safeName + ext;
   const progress = document.getElementById("upload-progress");
   const bar = document.getElementById("upload-bar");
 
@@ -748,7 +752,7 @@ async function uploadMusic(e) {
     bar.style.width = "50%";
 
     // Upload via GitHub API
-    const path = "public/assets/music/" + file.name;
+    const path = "public/assets/music/" + cleanFile;
     await ghPut("/repos/" + config.repo + "/contents/" + path, {
       message: "Add music: " + name,
       content: b64,
@@ -760,7 +764,7 @@ async function uploadMusic(e) {
     // Auto-add to playlist
     try {
       const configData = await readFile("src/config/musicConfig.ts");
-      const entry = { name, artist, url: "/assets/music/" + file.name, cover: "", lrc: "" };
+      const entry = { name, artist, url: "/assets/music/" + cleanFile, cover: "", lrc: "" };
       const entryLines = [
         "\t\t\t{",
         "\t\t\t\tname: " + JSON.stringify(entry.name) + ",",
@@ -770,12 +774,34 @@ async function uploadMusic(e) {
         "\t\t\t\tlrc: \"\",",
         "\t\t\t}",
       ].join("\n");
-      const playlistRegex = /(playlist:\s*\[)([\s\S]*?)(\])/;
-      const match = configData.content.match(playlistRegex);
-      if (match) {
-        const newEntry = match[2].trim() ? "\n" + entryLines + "," + match[2] : "\n" + entryLines + "," + match[2];
-        const newPlaylist = "playlist: [" + newEntry + "\n\t\t]";
-        const updated = configData.content.replace(playlistRegex, newPlaylist);
+
+      // Extract existing entries with brace/bracket depth counting
+      const content = configData.content;
+      let existingRaw = "";
+      const ps = content.indexOf("playlist: [");
+      if (ps !== -1) {
+        let braceDepth = 0, bracketDepth = 0, endPos = -1;
+        const inner = content.slice(ps + "playlist: [".length);
+        for (let i = 0; i < inner.length; i++) {
+          const ch = inner[i];
+          if (ch === "{") braceDepth++;
+          if (ch === "}") braceDepth--;
+          if (ch === "[") bracketDepth++;
+          if (ch === "]") {
+            if (braceDepth === 0 && bracketDepth === 0) { endPos = i; break; }
+            bracketDepth--;
+          }
+        }
+        if (endPos !== -1) existingRaw = inner.slice(0, endPos).trim();
+      }
+
+      // Rebuild full config from template
+      const hasExisting = existingRaw.length > 0;
+      const allEntries = hasExisting ? entryLines + ",\n" + existingRaw : entryLines;
+      const header = content.slice(0, content.indexOf("local:"));
+      const updated = header + "\tlocal: {\n\t\tplaylist: [\n" + allEntries + "\n\t\t],\n\t},\n};";
+
+      if (ps !== -1) {
         await writeFile("src/config/musicConfig.ts", updated, "Add music to playlist: " + name);
       }
     } catch (configErr) {

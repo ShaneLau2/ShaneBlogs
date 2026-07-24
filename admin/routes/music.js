@@ -23,7 +23,12 @@ const storage = multer.diskStorage({
 		}
 	},
 	filename: (req, file, cb) => {
-		cb(null, file.originalname);
+		// Sanitize filename: keep Chinese characters, remove special chars
+		const name = file.originalname.replace(/\.[^.]+$/, "");
+		const ext = file.originalname.match(/\.[^.]+$/)?.[0] || "";
+		// Keep Unicode letters, spaces, hyphens, parentheses; remove the rest
+		const safe = name.replace(/[^\p{L}\p{N}\s\-()]/gu, "").replace(/\s+/g, " ").trim().slice(0, 80);
+		cb(null, safe + ext);
 	},
 });
 
@@ -45,8 +50,8 @@ router.get("/", (req, res) => {
 router.post("/upload", upload.fields([{ name: "audio", maxCount: 1 }, { name: "cover", maxCount: 1 }]), (req, res) => {
 	try {
 		const result = {};
-		if (req.files?.audio) result.audio = req.files.audio[0].originalname;
-		if (req.files?.cover) result.cover = req.files.cover[0].originalname;
+		if (req.files?.audio) result.audio = req.files.audio[0].filename;
+		if (req.files?.cover) result.cover = req.files.cover[0].filename;
 		res.json({ success: true, ...result });
 	} catch (err) {
 		res.status(500).json({ error: err.message });
@@ -57,42 +62,65 @@ router.post("/upload", upload.fields([{ name: "audio", maxCount: 1 }, { name: "c
 router.post("/upload-and-add", upload.fields([{ name: "audio", maxCount: 1 }, { name: "cover", maxCount: 1 }]), (req, res) => {
 	try {
 		const result = {};
-		if (req.files?.audio) result.audio = req.files.audio[0].originalname;
-		if (req.files?.cover) result.cover = req.files.cover[0].originalname;
+		if (req.files?.audio) result.audio = req.files.audio[0].filename;
+		if (req.files?.cover) result.cover = req.files.cover[0].filename;
 
 		const songName = req.body.name || result.audio?.replace(/\.[^.]+$/, "") || "Unknown";
 		const artist = req.body.artist || "Unknown";
 
-		// Build playlist entry
-		const entry = {
-			name: songName,
-			artist: artist,
-			url: "/assets/music/" + result.audio,
-			cover: result.cover ? "/assets/music/cover/" + result.cover : "",
-			lrc: "",
-		};
+		// Build playlist entry — multer already sanitized the filename
+		const esc = (s) => JSON.stringify(s || "");
+		const fileName = result.audio || "unknown.mp3";
+		const entryLines = [
+			"\t\t\t{",
+			"\t\t\t\tname: " + esc(songName) + ",",
+			"\t\t\t\tartist: " + esc(artist) + ",",
+			"\t\t\t\turl: " + esc("/assets/music/" + fileName) + ",",
+			"\t\t\t\tcover: " + esc(result.cover ? "/assets/music/cover/" + result.cover : "") + ",",
+			"\t\t\t\tlrc: \"\",",
+			"\t\t\t}",
+		].join("\n");
 
-		// Read and update musicConfig.ts
+		// Read current config and extract existing entries
 		const configPath = "src/config/musicConfig.ts";
 		const configContent = readFile(configPath);
 
-		// Find the playlist array in the local section
-		const playlistRegex = /(playlist:\s*\[)([\s\S]*?)(\])/;
-		const match = configContent.match(playlistRegex);
-
-		if (match) {
-			const existingItems = match[2].trim();
-			const entryJson = JSON.stringify(entry, null, 2)
-				.replace(/\n/g, "\n      ");
-			const newEntry = existingItems
-				? `\n      ${entryJson},${match[2]}`
-				: `\n      ${entryJson},${match[2]}`;
-			const newPlaylist = `playlist: [${newEntry}\n    ]`;
-			const updated = configContent.replace(playlistRegex, newPlaylist);
-
-			writeFile(configPath, updated);
-			result.configUpdated = true;
+		// Extract entries between playlist: [...] — track brace depth to handle [Official Video] inside strings
+		let existingRaw = "";
+		const ps = configContent.indexOf("playlist: [");
+		if (ps !== -1) {
+			let braceDepth = 0;
+			let bracketDepth = 0;
+			let endPos = -1;
+			const inner = configContent.slice(ps + "playlist: [".length);
+			for (let i = 0; i < inner.length; i++) {
+				const ch = inner[i];
+				if (ch === "{") braceDepth++;
+				if (ch === "}") braceDepth--;
+				if (ch === "[") bracketDepth++;
+				if (ch === "]") {
+					if (braceDepth === 0 && bracketDepth === 0) {
+						endPos = i;
+						break;
+					}
+					bracketDepth--;
+				}
+			}
+			if (endPos !== -1) {
+				existingRaw = inner.slice(0, endPos).trim();
+			}
 		}
+		// Rebuild full config from template
+		const hasExisting = existingRaw.length > 0;
+		const allEntries = hasExisting
+			? `${entryLines},\n${existingRaw}`
+			: `${entryLines}`;
+
+		const header = configContent.slice(0, configContent.indexOf("local:"));
+		const newConfig = `${header}\tlocal: {\n\t\tplaylist: [\n${allEntries}\n\t\t],\n\t},\n};`;
+
+		writeFile(configPath, newConfig);
+		result.configUpdated = true;
 
 		res.json({ success: true, ...result });
 	} catch (err) {
