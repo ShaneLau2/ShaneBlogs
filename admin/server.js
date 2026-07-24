@@ -1,5 +1,6 @@
 import express from "express";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postsRouter from "./routes/posts.js";
@@ -18,10 +19,17 @@ function sha256(str) {
 	return crypto.createHash("sha256").update(str).digest("hex");
 }
 
-// Admin password: set ADMIN_PASSWORD_HASH env var to the SHA-256 of your password
-// Default hash is for "admin" — generate your own with: node -e "console.log(require('crypto').createHash('sha256').update('your-password').digest('hex'))"
-const ADMIN_PASSWORD_HASH =
-	process.env.ADMIN_PASSWORD_HASH || "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+// Admin password: reads hash from public/admin/config.json (shared with online admin)
+// Override with ADMIN_PASSWORD_HASH env var for extra security
+function loadPasswordHash() {
+	try {
+		const configPath = path.resolve(__dirname, "../public/admin/config.json");
+		const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+		if (config.passwordHash) return config.passwordHash;
+	} catch {}
+	return "02d359422b9f01dde348f2402424f93798e75a944204c535bbe9bfc18e2ab901";
+}
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || loadPasswordHash();
 
 const app = express();
 

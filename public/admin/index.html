@@ -67,6 +67,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <a href="#" data-page="dynamics">💬 Dynamics</a>
     <a href="#" data-page="spec">📋 Pages</a>
     <a href="#" data-page="config">⚙️ Config</a>
+    <a href="#" data-page="announcement">📢 Announcement</a>
+    <a href="#" data-page="music">🎵 Music</a>
     <a href="#" data-page="deploy">🚀 Deploy</a>
     </div>
   </nav>
@@ -233,6 +235,8 @@ function navigateTo(page) {
     case "dynamics": renderDynamics(content, title, desc); break;
     case "spec": renderSpec(content, title, desc); break;
     case "config": renderConfig(content, title, desc); break;
+    case "announcement": renderAnnouncement(content, title, desc); break;
+    case "music": renderMusic(content, title, desc); break;
     case "deploy": renderDeploy(content, title, desc); break;
   }
 }
@@ -554,6 +558,196 @@ async function saveConfig(e, file) {
   try {
     await writeFile("src/config/" + file, content, "Update " + file);
     toast("Config saved! Redeploy to see changes.", "success");
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+// ====== Announcement ======
+async function renderAnnouncement(el, title, desc) {
+  title.textContent = "📢 Announcement";
+  desc.textContent = "Edit site announcement";
+  try {
+    const data = await readFile("src/config/announcementConfig.ts");
+    // Extract current values with simple parsing
+    const titleMatch = data.content.match(/title:\s*"([^"]*)"/);
+    const contentMatch = data.content.match(/content:\s*"([^"]*)"/);
+    const linkTextMatch = data.content.match(/text:\s*"([^"]*)"/);
+    const linkUrlMatch = data.content.match(/url:\s*"([^"]*)"/);
+    const enableMatch = data.content.match(/enable:\s*(true|false)/);
+
+    const currentTitle = titleMatch ? titleMatch[1] : "";
+    const currentContent = contentMatch ? contentMatch[1] : "";
+    const linkText = linkTextMatch ? linkTextMatch[1] : "";
+    const linkUrl = linkUrlMatch ? linkUrlMatch[1] : "";
+    const linkEnabled = enableMatch ? enableMatch[1] : "true";
+
+    el.innerHTML = '<div class="card"><div class="card-header"><h3>Edit Announcement</h3></div>' +
+      '<form onsubmit="saveAnnouncement(event)">' +
+      '<div class="form-group"><label>Title</label><input name="title" value="' + escapeHtml(currentTitle) + '"></div>' +
+      '<div class="form-group"><label>Content</label><textarea name="content" rows="4">' + escapeHtml(currentContent) + '</textarea></div>' +
+      '<hr style="margin:1rem 0;border:none;border-top:1px solid #e2e8f0;">' +
+      '<p style="font-size:.8rem;color:#64748b;margin-bottom:.75rem;">Optional Link</p>' +
+      '<div class="form-row"><div class="form-group"><label>Link Text</label><input name="linkText" value="' + escapeHtml(linkText) + '"></div>' +
+      '<div class="form-group"><label>Link URL</label><input name="linkUrl" value="' + escapeHtml(linkUrl) + '"></div></div>' +
+      '<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">' +
+      '<label style="font-size:.8rem;"><input type="checkbox" name="linkEnabled" ' + (linkEnabled === "true" ? "checked" : "") + '> Enable link</label></div>' +
+      '<div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form></div>';
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+  }
+}
+
+async function saveAnnouncement(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const title = fd.get("title") || "Announcement";
+  const content = fd.get("content") || "";
+  const linkText = fd.get("linkText") || "";
+  const linkUrl = fd.get("linkUrl") || "";
+  const linkEnabled = fd.get("linkEnabled") !== null;
+
+  const configContent = `import type { AnnouncementConfig } from "../types/announcementConfig";
+
+export const announcementConfig: AnnouncementConfig = {
+	// 公告标题
+	title: "${title}",
+
+	// 公告内容
+	content: "${content}",
+
+	// 是否允许用户关闭公告
+	closable: true,
+
+	link: {
+		// 启用链接
+		enable: ${linkEnabled},
+		// 链接文本
+		text: "${linkText}",
+		// 链接 URL
+		url: "${linkUrl}",
+		// 内部链接
+		external: false,
+	},
+};`;
+
+  try {
+    await writeFile("src/config/announcementConfig.ts", configContent, "Update announcement");
+    toast("Announcement saved! Redeploy to see changes.", "success");
+    renderAnnouncement(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+  } catch (err) {
+    toast("Failed: " + err.message, "error");
+  }
+}
+
+// ====== Music ======
+async function renderMusic(el, title, desc) {
+  title.textContent = "🎵 Music";
+  desc.textContent = "Manage music files and playlist";
+  try {
+    // List music files from repo
+    const musicFiles = await listFiles("public/assets/music");
+    const audioFiles = musicFiles.filter(f => /\.(mp3|flac|wav|ogg|m4a)$/i.test(f) && f !== "cover");
+    const covers = musicFiles.filter(f => /\.(webp|png|jpg|jpeg|avif)$/i.test(f));
+
+    // Read musicConfig to show current playlist
+    let playlistHtml = "";
+    try {
+      const configData = await readFile("src/config/musicConfig.ts");
+      const playlistMatch = configData.content.match(/playlist:\s*\[([\s\S]*?)\],\s*\n/);
+      if (playlistMatch && playlistMatch[1].trim()) {
+        playlistHtml = '<pre style="font-size:.75rem;background:#f8fafc;padding:.75rem;border-radius:.375rem;overflow-x:auto;max-height:200px;overflow-y:auto;">' + escapeHtml(playlistMatch[0]) + '</pre>';
+      } else {
+        playlistHtml = '<div class="empty-state">Playlist is empty</div>';
+      }
+    } catch { playlistHtml = '<div class="empty-state">Could not load config</div>'; }
+
+    el.innerHTML = '<div class="card"><div class="card-header"><h3>Upload Music</h3></div>' +
+      '<p style="font-size:.8rem;color:#64748b;margin-bottom:.75rem;">Upload MP3 files (max ~10MB via GitHub API). After upload, edit the playlist below.</p>' +
+      '<form onsubmit="uploadMusic(event)">' +
+      '<div class="form-row"><div class="form-group"><label>Song Name</label><input name="name" placeholder="Song title" required></div>' +
+      '<div class="form-group"><label>Artist</label><input name="artist" placeholder="Artist name"></div></div>' +
+      '<div class="form-group"><label>MP3 File</label><input type="file" name="audio" accept=".mp3" required></div>' +
+      '<div id="upload-progress" style="display:none;margin-bottom:.5rem;"><div style="height:4px;background:#e2e8f0;border-radius:999px;overflow:hidden;"><div id="upload-bar" style="height:100%;width:0%;background:#0891b2;transition:width .3s;"></div></div></div>' +
+      '<button type="submit" class="btn btn-primary btn-sm">Upload</button></form></div>' +
+
+      '<div class="card"><div class="card-header"><h3>Music Files (' + audioFiles.length + ')</h3></div>' +
+      (audioFiles.length === 0 ? '<div class="empty-state">No music files</div>' :
+      '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
+      audioFiles.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" onclick="deleteMusicFile(\'public/assets/music/' + f + '\')">🗑️</button></td></tr>').join("") +
+      '</tbody></table></div>') + '</div>' +
+
+      (covers.length > 0 ? '<div class="card"><div class="card-header"><h3>Covers (' + covers.length + ')</h3></div>' +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">' +
+      covers.map(c => '<div style="text-align:center;"><img src="https://raw.githubusercontent.com/' + config.repo + '/master/public/assets/music/cover/' + c + '" style="width:60px;height:60px;object-fit:cover;border-radius:.25rem;"><p style="font-size:.65rem;margin-top:.25rem;color:#64748b;">' + c + '</p></div>').join("") +
+      '</div></div>' : '') +
+
+      '<div class="card"><div class="card-header"><h3>Playlist (musicConfig.ts)</h3>' +
+      '<a class="btn btn-outline btn-sm" href="#" onclick="navigateTo(\'config\');setTimeout(function(){editConfig(\'musicConfig.ts\')},100);">✏️ Edit Config</a></div>' +
+      playlistHtml + '</div>';
+  } catch (err) {
+    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+  }
+}
+
+async function uploadMusic(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const file = fd.get("audio");
+  const name = fd.get("name") || file.name.replace(/\.[^.]+$/, "");
+  const artist = fd.get("artist") || "Unknown";
+  const progress = document.getElementById("upload-progress");
+  const bar = document.getElementById("upload-bar");
+
+  if (file.size > 10 * 1024 * 1024) {
+    toast("File too large (>10MB). Use local admin instead.", "error");
+    return;
+  }
+
+  progress.style.display = "block";
+  bar.style.width = "10%";
+
+  try {
+    // Read file as base64
+    const b64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    bar.style.width = "50%";
+
+    // Upload via GitHub API
+    const path = "public/assets/music/" + file.name;
+    await ghPut("/repos/" + config.repo + "/contents/" + path, {
+      message: "Add music: " + name,
+      content: b64,
+      branch: config.branch,
+    });
+
+    bar.style.width = "100%";
+    toast("Uploaded! Now edit the playlist config to add it.", "success");
+    setTimeout(() => renderMusic(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc")), 500);
+  } catch (err) {
+    toast("Upload failed: " + err.message, "error");
+    progress.style.display = "none";
+  }
+}
+
+async function deleteMusicFile(path) {
+  if (!confirm("Delete " + path.split("/").pop() + "?")) return;
+  try {
+    const existing = await readFile(path);
+    if (!existing.sha) { toast("Not found", "error"); return; }
+    await ghDelete("/repos/" + config.repo + "/contents/" + path, {
+      data: { message: "Delete music file", sha: existing.sha, branch: config.branch }
+    });
+    toast("Deleted", "success");
+    renderMusic(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }

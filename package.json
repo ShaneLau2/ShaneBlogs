@@ -14,7 +14,7 @@
     "new-d": "tsx scripts/new-dynamic.js",
     "new-post": "node scripts/new-post.js",
     "admin": "cd admin && node server.js",
-    "admin:secure": "ADMIN_PASSWORD_HASH=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918 node admin/server.js",
+    "admin:secure": "ADMIN_PASSWORD_HASH=02d359422b9f01dde348f2402424f93798e75a944204c535bbe9bfc18e2ab901 node admin/server.js",
     "admin:hash": "node admin/hash-password.js",
     "admin:set-pwd": "node admin/set-password.js",
     "dev:all": "node --input-type=module -e \"import { spawn } from 'node:child_process'; const dev = spawn('pnpm', ['dev'], { stdio: 'inherit', shell: true }); const admin = spawn('pnpm', ['admin'], { stdio: 'inherit', shell: true }); process.on('SIGINT', () => { dev.kill(); admin.kill(); process.exit(); });\"",
