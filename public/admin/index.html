@@ -5,72 +5,97 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Firefly Admin</title>
 <style>
+:root{--primary:#0891b2;--primary-hover:#0e7490;--bg:#f1f5f9;--sidebar-bg:#1e293b;--sidebar-text:#94a3b8;--sidebar-active:#0891b2;--card-bg:#ffffff;--text:#1e293b;--text-muted:#64748b;--border:#e2e8f0;--danger:#ef4444;--success:#22c55e;--radius:0.5rem;--shadow:0 1px 3px rgba(0,0,0,0.08)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
-.sidebar{width:220px;background:#1e293b;color:#94a3b8;position:fixed;height:100vh;display:none;flex-direction:column;z-index:1000;overflow-y:auto}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);position:fixed;top:0;left:0;height:100vh;z-index:100;display:none;flex-direction:column}
 .sidebar.open{display:flex}
-.sidebar h1{padding:1.25rem;color:#fff;font-size:1rem;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0}
-.sidebar .nav-wrap{flex:1;overflow-y:auto;padding:.5rem 0}
-.sidebar .nav-wrap a{display:flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;color:#94a3b8;text-decoration:none;font-size:.875rem;cursor:pointer}
-.sidebar .nav-wrap a:hover,.sidebar .nav-wrap a.active{background:rgba(255,255,255,0.08);color:#fff}
-.sidebar .sidebar-footer{margin-top:auto;padding:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:.75rem;color:#64748b;flex-shrink:0}
-.main{margin-left:0;padding:1rem;max-width:100%;min-height:100vh}
-.main.with-sidebar{margin-left:220px}
-.page-header{margin-bottom:1rem}
-.page-header h2{font-size:1.25rem}
-.page-header p{color:#64748b;font-size:.8rem}
-.card{background:#fff;border-radius:.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:1rem;margin-bottom:1rem}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid #e2e8f0}
-.card-header h3{font-size:.95rem}
-.btn{display:inline-flex;align-items:center;gap:.25rem;padding:.375rem .75rem;border-radius:.375rem;font-size:.8rem;border:none;cursor:pointer}
-.btn-primary{background:#0891b2;color:#fff}
-.btn-danger{background:#ef4444;color:#fff}
-.btn-success{background:#22c55e;color:#fff}
-.btn-outline{background:transparent;border:1px solid #e2e8f0;color:#1e293b}
-.btn-sm{padding:.25rem .5rem;font-size:.75rem}
+.sidebar-header{padding:1.25rem;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0}
+.sidebar-header h1{color:#fff;font-size:1.1rem;font-weight:600}
+.sidebar-header p{font-size:.75rem;margin-top:.25rem}
+.nav-wrap{flex:1;overflow-y:auto;padding:.5rem 0}
+.nav-wrap a{display:flex;align-items:center;gap:.75rem;padding:.625rem 1.25rem;color:var(--sidebar-text);text-decoration:none;font-size:.875rem;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-wrap a:hover,.nav-wrap a.active{background:rgba(255,255,255,0.08);color:#fff}
+.nav-wrap a.active{border-right:3px solid var(--sidebar-active)}
+.nav-wrap .icon{width:1.25rem;text-align:center;font-size:1.1rem}
+.sidebar-footer{padding:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:.75rem;color:var(--text-muted);flex-shrink:0}
+.main{margin-left:0;flex:1;padding:1.5rem;max-width:calc(100vw - 240px)}
+.main.no-sidebar{max-width:100%}
+.page-header{margin-bottom:1.5rem}
+.page-header h2{font-size:1.5rem;font-weight:600}
+.page-header p{color:var(--text-muted);font-size:.875rem;margin-top:.25rem}
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem;margin-bottom:1rem}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+.card-header h3{font-size:1rem;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem}
+.stat-card .value{font-size:1.75rem;font-weight:700;color:var(--primary)}
+.stat-card .label{font-size:.8rem;color:var(--text-muted);margin-top:.25rem}
+.btn{display:inline-flex;align-items:center;gap:.375rem;padding:.5rem 1rem;border-radius:.375rem;font-size:.875rem;font-weight:500;border:none;cursor:pointer;transition:all .15s;text-decoration:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#16a34a}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--bg)}
+.btn-sm{padding:.375rem .75rem;font-size:.8rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.form-group{margin-bottom:.75rem}
-.form-group label{display:block;font-size:.8rem;font-weight:500;margin-bottom:.25rem}
-.form-group input,.form-group textarea,.form-group select{width:100%;padding:.4rem .6rem;border:1px solid #e2e8f0;border-radius:.375rem;font-size:.8rem;font-family:inherit}
-.form-group textarea{min-height:80px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-.form-actions{display:flex;gap:.5rem;margin-top:.75rem}
-.table{width:100%;border-collapse:collapse;font-size:.8rem}
-.table th,.table td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid #e2e8f0}
-.table th{font-weight:600;color:#64748b;font-size:.7rem}
-.actions{display:flex;gap:.25rem}
-.tag{display:inline-block;padding:.1rem .4rem;border-radius:999px;font-size:.7rem;background:#e0f2fe;color:#0369a1;margin:.1rem}
-.badge{padding:.1rem .4rem;border-radius:999px;font-size:.65rem}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:.875rem;font-weight:500;margin-bottom:.375rem}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:.375rem;font-size:.875rem;font-family:inherit;background:#fff}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(8,145,178,0.15)}
+.form-group textarea{min-height:100px;line-height:1.5}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.form-actions{display:flex;gap:.5rem;margin-top:1rem}
+.table{width:100%;border-collapse:collapse;font-size:.875rem}
+.table th,.table td{text-align:left;padding:.625rem .75rem;border-bottom:1px solid var(--border)}
+.table th{font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.table tr:hover td{background:#f8fafc}
+.actions{display:flex;gap:.375rem}
+.tag{display:inline-block;padding:.125rem .5rem;border-radius:999px;font-size:.75rem;font-weight:500;background:#e0f2fe;color:#0369a1;margin:.125rem}
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;border-radius:999px;font-size:.7rem;font-weight:500}
 .badge-success{background:#dcfce7;color:#166534}
 .badge-warning{background:#fef3c7;color:#92400e}
 .badge-info{background:#e0f2fe;color:#0369a1}
-.toast-container{position:fixed;top:.5rem;right:.5rem;z-index:999}
-.toast{padding:.5rem .75rem;border-radius:.375rem;margin-bottom:.25rem;font-size:.8rem;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
-.toast-success{background:#dcfce7;color:#166534}
-.toast-error{background:#fee2e2;color:#991b1b}
-.loading{text-align:center;padding:2rem;color:#64748b}
-.empty-state{text-align:center;padding:2rem;color:#64748b}
-.empty-state .icon{font-size:2rem;margin-bottom:.5rem}
+.toast-container{position:fixed;top:1rem;right:1rem;z-index:999}
+.toast{padding:.75rem 1rem;border-radius:.375rem;margin-bottom:.5rem;font-size:.875rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn .2s ease}
+.toast-success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.toast-error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.loading{text-align:center;padding:2rem;color:var(--text-muted)}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-muted)}
+.empty-state .icon{font-size:2.5rem;margin-bottom:.75rem}
 .table-wrap{overflow-x:auto}
-.markdown-hint{font-size:.7rem;color:#64748b;margin-top:.2rem}
-.hamburger{display:block;background:none;border:none;font-size:1.5rem;cursor:pointer;padding:.25rem;margin-bottom:.5rem}
-@media(min-width:768px){.sidebar{display:flex}.hamburger{display:none}.main{padding:1.25rem}}
+.markdown-hint{font-size:.75rem;color:var(--text-muted);margin-top:.25rem}
+.hamburger{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;padding:.25rem;margin-bottom:.5rem;color:var(--text)}
+@media(max-width:768px){
+.sidebar{width:56px}
+.sidebar-header h1,.sidebar-header p,.nav-wrap a span,.sidebar-footer{display:none}
+.nav-wrap a{justify-content:center;padding:.75rem}
+.nav-wrap .icon{margin:0}
+.main{margin-left:0;max-width:100%;padding:1rem}
+.form-row{grid-template-columns:1fr}
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
 <div class="sidebar" id="sidebar">
-  <h1>📝 Firefly Admin</h1>
-  <nav>
-    <div class="nav-wrap">
-    <a href="#" data-page="dashboard" class="active">📊 Dashboard</a>
-    <a href="#" data-page="posts">📄 Posts</a>
-    <a href="#" data-page="dynamics">💬 Dynamics</a>
-    <a href="#" data-page="spec">📋 Pages</a>
-    <a href="#" data-page="config">⚙️ Config</a>
-    <a href="#" data-page="announcement">📢 Announcement</a>
-    <a href="#" data-page="music">🎵 Music</a>
-    <a href="#" data-page="deploy">🚀 Deploy</a>
-    </div>
+  <div class="sidebar-header">
+    <h1>📝 Firefly</h1>
+    <p>Blog Admin</p>
+  </div>
+  <nav class="nav-wrap">
+    <a href="#" data-page="dashboard" class="active"><span class="icon">📊</span><span>Dashboard</span></a>
+    <a href="#" data-page="posts"><span class="icon">📄</span><span>Posts</span></a>
+    <a href="#" data-page="dynamics"><span class="icon">💬</span><span>Dynamics</span></a>
+    <a href="#" data-page="spec"><span class="icon">📋</span><span>Pages</span></a>
+    <a href="#" data-page="config"><span class="icon">⚙️</span><span>Config</span></a>
+    <a href="#" data-page="announcement"><span class="icon">📢</span><span>Announcement</span></a>
+    <a href="#" data-page="music"><span class="icon">🎵</span><span>Music</span></a>
+    <a href="#" data-page="deploy"><span class="icon">🚀</span><span>Deploy</span></a>
   </nav>
   <div class="sidebar-footer" id="login-status"></div>
 </div>
@@ -103,7 +128,8 @@ let currentPage = "dashboard";
     // Auto-open sidebar on desktop
     if (window.innerWidth >= 768) {
       document.getElementById("sidebar").classList.add("open");
-      document.getElementById("main").classList.add("with-sidebar");
+    } else {
+      document.getElementById("main").classList.add("no-sidebar");
     }
   } catch (e) {
     document.getElementById("page-content").innerHTML = '<div class="empty-state">Failed to load config.json</div>';
@@ -125,7 +151,7 @@ function renderApp() {
 // ====== Toggle ======
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("open");
-  document.getElementById("main").classList.toggle("with-sidebar");
+  document.getElementById("main").classList.toggle("no-sidebar");
 }
 
 // ====== Toast ======
@@ -730,7 +756,33 @@ async function uploadMusic(e) {
     });
 
     bar.style.width = "100%";
-    toast("Uploaded! Now edit the playlist config to add it.", "success");
+
+    // Auto-add to playlist
+    try {
+      const configData = await readFile("src/config/musicConfig.ts");
+      const entry = { name, artist, url: "/assets/music/" + file.name, cover: "", lrc: "" };
+      const entryLines = [
+        "\t\t\t{",
+        "\t\t\t\tname: " + JSON.stringify(entry.name) + ",",
+        "\t\t\t\tartist: " + JSON.stringify(entry.artist) + ",",
+        "\t\t\t\turl: " + JSON.stringify(entry.url) + ",",
+        "\t\t\t\tcover: \"\",",
+        "\t\t\t\tlrc: \"\",",
+        "\t\t\t}",
+      ].join("\n");
+      const playlistRegex = /(playlist:\s*\[)([\s\S]*?)(\])/;
+      const match = configData.content.match(playlistRegex);
+      if (match) {
+        const newEntry = match[2].trim() ? "\n" + entryLines + "," + match[2] : "\n" + entryLines + "," + match[2];
+        const newPlaylist = "playlist: [" + newEntry + "\n\t\t]";
+        const updated = configData.content.replace(playlistRegex, newPlaylist);
+        await writeFile("src/config/musicConfig.ts", updated, "Add music to playlist: " + name);
+      }
+    } catch (configErr) {
+      console.error("Failed to update playlist config", configErr);
+    }
+
+    toast("Uploaded and added to playlist! Redeploy to publish.", "success");
     setTimeout(() => renderMusic(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc")), 500);
   } catch (err) {
     toast("Upload failed: " + err.message, "error");
