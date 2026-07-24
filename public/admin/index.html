@@ -7,12 +7,14 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
-.sidebar{width:220px;background:#1e293b;color:#94a3b8;position:fixed;height:100vh;display:none;flex-direction:column}
+.sidebar{width:220px;background:#1e293b;color:#94a3b8;position:fixed;height:100vh;display:none;flex-direction:column;z-index:1000;overflow-y:auto}
 .sidebar.open{display:flex}
-.sidebar h1{padding:1.25rem;color:#fff;font-size:1rem;border-bottom:1px solid rgba(255,255,255,0.1)}
-.sidebar nav a{display:flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;color:#94a3b8;text-decoration:none;font-size:.875rem;cursor:pointer}
-.sidebar nav a:hover,.sidebar nav a.active{background:rgba(255,255,255,0.08);color:#fff}
-.main{margin-left:0;padding:1rem;max-width:100%}
+.sidebar h1{padding:1.25rem;color:#fff;font-size:1rem;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0}
+.sidebar .nav-wrap{flex:1;overflow-y:auto;padding:.5rem 0}
+.sidebar .nav-wrap a{display:flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;color:#94a3b8;text-decoration:none;font-size:.875rem;cursor:pointer}
+.sidebar .nav-wrap a:hover,.sidebar .nav-wrap a.active{background:rgba(255,255,255,0.08);color:#fff}
+.sidebar .sidebar-footer{margin-top:auto;padding:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:.75rem;color:#64748b;flex-shrink:0}
+.main{margin-left:0;padding:1rem;max-width:100%;min-height:100vh}
 .main.with-sidebar{margin-left:220px}
 .page-header{margin-bottom:1rem}
 .page-header h2{font-size:1.25rem}
@@ -59,16 +61,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="sidebar" id="sidebar">
   <h1>📝 Firefly Admin</h1>
   <nav>
+    <div class="nav-wrap">
     <a href="#" data-page="dashboard" class="active">📊 Dashboard</a>
     <a href="#" data-page="posts">📄 Posts</a>
     <a href="#" data-page="dynamics">💬 Dynamics</a>
     <a href="#" data-page="spec">📋 Pages</a>
     <a href="#" data-page="config">⚙️ Config</a>
     <a href="#" data-page="deploy">🚀 Deploy</a>
+    </div>
   </nav>
-  <div style="margin-top:auto;padding:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:.75rem;color:#64748b;">
-    <div id="login-status"></div>
-  </div>
+  <div class="sidebar-footer" id="login-status"></div>
 </div>
 
 <div class="main" id="main">
