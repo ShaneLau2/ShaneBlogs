@@ -43,11 +43,6 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Debug paths
-        run: |
-          echo "base_url: ${{ steps.pages.outputs.base_url }}"
-          echo "base_path: ${{ steps.pages.outputs.base_path }}"
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -55,7 +50,8 @@ jobs:
         run: pnpm build
         env:
           ASTRO_SITE_URL: ${{ steps.pages.outputs.base_url }}
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Hard-code the repo name for base path — this is the most reliable approach
+          ASTRO_BASE: /ShaneBlogs/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

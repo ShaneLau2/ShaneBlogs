@@ -65,8 +65,8 @@ const adapter = process.env.CF_WORKERS
 export default defineConfig({
 	site: process.env.ASTRO_SITE_URL || siteConfig.site_url,
 
-	// GitHub Pages sets BASE_PATH via actions/configure-pages; fall back to "/" for dev
-	base: process.env.BASE_PATH || (process.env.GITHUB_ACTIONS === "true" ? "/ShaneBlogs/" : "/"),
+	// GitHub Pages: ASTRO_BASE is set in the deploy workflow; local dev falls back to "/"
+	base: process.env.ASTRO_BASE || "/",
 	trailingSlash: "always",
 
 	// 字体配置 - 只加载实际使用的字体，跳过未引用的以加快构建
