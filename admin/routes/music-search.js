@@ -48,9 +48,10 @@ router.post("/download", async (req, res) => {
 
 		const url = `https://www.youtube.com/watch?v=${videoId}`;
 		const safeName = (title || "audio")
-			.replace(/[^\w\s\-]/g, "")
+			.replace(/[^\w\s\-()]/g, "")
+			.replace(/\s+/g, " ")
 			.trim()
-			.slice(0, 60);
+			.slice(0, 80);
 		const fileName = `${safeName}.mp3`;
 		const filePath = path.join(MUSIC_DIR, fileName);
 
@@ -71,13 +72,16 @@ router.post("/download", async (req, res) => {
 		});
 
 		// Update musicConfig.ts
-		const entry = {
-			name: title || safeName,
-			artist: artist || "Unknown",
-			url: "/assets/music/" + fileName,
-			cover: "",
-			lrc: "",
-		};
+		function esc(s) { return JSON.stringify(s || ""); }
+		const entryLines = [
+			"\t\t\t{",
+			"\t\t\t\tname: " + esc(title || safeName) + ",",
+			"\t\t\t\tartist: " + esc(artist || "Unknown") + ",",
+			"\t\t\t\turl: " + esc("/assets/music/" + fileName) + ",",
+			"\t\t\t\tcover: \"\",",
+			"\t\t\t\tlrc: \"\",",
+			"\t\t\t}",
+		].join("\n");
 
 		const configPath = "src/config/musicConfig.ts";
 		const configContent = readFile(configPath);
@@ -86,11 +90,10 @@ router.post("/download", async (req, res) => {
 
 		let configUpdated = false;
 		if (match) {
-			const entryJson = JSON.stringify(entry, null, 2).replace(/\n/g, "\n      ");
 			const newEntry = match[2].trim()
-				? `\n      ${entryJson},${match[2]}`
-				: `\n      ${entryJson},${match[2]}`;
-			const newPlaylist = `playlist: [${newEntry}\n    ]`;
+				? `\n${entryLines},${match[2]}`
+				: `\n${entryLines},${match[2]}`;
+			const newPlaylist = `playlist: [${newEntry}\n\t\t]`;
 			const updated = configContent.replace(playlistRegex, newPlaylist);
 			writeFile(configPath, updated);
 			configUpdated = true;

@@ -41,16 +41,12 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	},
 
 	// 本地音乐配置（当 mode 为 'local' 时使用）
-	// 1. 支持传入歌词文件的路径
-	// lrc: "/assets/music/lrc/使一颗心免于哀伤-哼唱.lrc",
-	// 2. 或者直接填入歌词字符串内容
-	// lrc: "[00:00.00]歌词内容...",
 	local: {
 		playlist: [
 			{
-				name: "We Don't talk anymore",
-				artist: "Charlie Puth",
-				url: "/assets/music/Charlie Puth - We Don't Talk Anymore (feat. Selena Gomez) [Official Video].mp3",
+				name: "See You Again",
+				artist: "Wiz Khalifa",
+				url: "/assets/music/Wiz Khalifa - See You Again ft. Charlie Puth Furious 7 Soundtrack.mp3",
 				cover: "",
 				lrc: "",
 			},
