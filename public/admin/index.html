@@ -491,7 +491,7 @@ async function saveDynamic(e) {
   const pinned = fd.get("pinned") !== null;
   const now = new Date();
   const slug = now.getFullYear() + "-" + pad(now.getMonth()+1) + "-" + pad(now.getDate()) + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
-  const fm = { published: slug.slice(0,10) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()), pinned };
+  const fm = { published: now.toISOString(), pinned: pinned };
   try {
     await writeFile("src/content/dynamic/" + slug + ".md", buildFM(fm, content), "New dynamic");
     toast("Posted!", "success");
