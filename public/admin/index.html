@@ -290,8 +290,8 @@ async function ghPut(path, body) {
   return gh(path, { method: "PUT", body: JSON.stringify(body) });
 }
 
-async function ghDelete(path) {
-  return gh(path, { method: "DELETE" });
+async function ghDelete(path, options) {
+  return gh(path, { method: "DELETE", ...options });
 }
 
 async function readFile(repoPath) {
@@ -323,11 +323,11 @@ async function deleteFile(repoPath, message) {
   const existing = await readFile(repoPath);
   if (!existing.sha) return false;
   await ghDelete("/repos/" + config.repo + "/contents/" + repoPath, {
-    data: {
+    body: JSON.stringify({
       message: message || "chore: delete via admin panel",
       sha: existing.sha,
       branch: config.branch,
-    }
+    })
   });
   return true;
 }
@@ -823,7 +823,7 @@ async function deleteMusicFile(path) {
     const existing = await readFile(path);
     if (!existing.sha) { toast("Not found", "error"); return; }
     await ghDelete("/repos/" + config.repo + "/contents/" + path, {
-      data: { message: "Delete music file", sha: existing.sha, branch: config.branch }
+      body: JSON.stringify({ message: "Delete music file", sha: existing.sha, branch: config.branch })
     });
     toast("Deleted", "success");
     renderMusic(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
