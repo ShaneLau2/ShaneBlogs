@@ -50,6 +50,8 @@ jobs:
           ASTRO_SITE_URL: ${{ steps.pages.outputs.base_url }}
           # Hard-code the repo name for base path — this is the most reliable approach
           ASTRO_BASE: /ShaneBlogs/
+          # CI can't fetch fonts from CDN, use system fonts fallback
+          NO_FONTS: "true"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
