@@ -33,7 +33,7 @@ export const fontsList: FontDefinition[] = [
 		provider: "fontsource",
 		weights: ["300", "400", "500", "600", "700"],
 		styles: ["normal"],
-		subsets: ["latin", "cyrillic"],
+		subsets: ["latin"],
 		fallbacks: ["sans-serif"],
 	},
 	{
@@ -42,7 +42,7 @@ export const fontsList: FontDefinition[] = [
 		provider: "fontsource",
 		weights: ["300", "400", "500", "600", "700"],
 		styles: ["normal"],
-		subsets: ["latin", "cyrillic"],
+		subsets: ["latin"],
 		fallbacks: ["sans-serif"],
 	},
 	{
@@ -51,7 +51,7 @@ export const fontsList: FontDefinition[] = [
 		provider: "fontsource",
 		weights: ["400", "700"],
 		styles: ["normal"],
-		subsets: ["latin", "cyrillic"],
+		subsets: ["latin"],
 		fallbacks: [
 			"ui-monospace",
 			"SFMono-Regular",
