@@ -20,9 +20,10 @@ const noFonts =
 
 // 使用共享的工具函数收集所有需要加载的 CSS 变量名（selected + 各区域字体，去重）
 // enable=false 或 NO_FONTS 时返回空集，不会加载任何字体
-const allCssVars = fontConfig.enable && !noFonts
-	? collectUsedFontCssVars(fontConfig)
-	: new Set<string>();
+const allCssVars =
+	fontConfig.enable && !noFonts
+		? collectUsedFontCssVars(fontConfig)
+		: new Set<string>();
 
 // 统一解析 selected 为数组（用于后续 body font-family 和 preload 判断）
 const selectedIds: string[] =
