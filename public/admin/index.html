@@ -297,9 +297,14 @@ async function ghDelete(path, options) {
 async function readFile(repoPath) {
   try {
     const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
-    // Properly decode UTF-8 base64 content
+    // Decode base64 content — handle both ASCII and UTF-8
     const raw = atob(data.content.replace(/\n/g, ""));
-    const content = decodeURIComponent(escape(raw));
+    let content;
+    try {
+      content = decodeURIComponent(escape(raw));
+    } catch {
+      content = raw;
+    }
     return { content, sha: data.sha };
   } catch (err) {
     return { content: "", sha: null };
@@ -504,9 +509,13 @@ async function saveDynamic(e) {
 async function deleteDynamic(file) {
   if (!confirm("Delete " + file + "?")) return;
   try {
-    await deleteFile("src/content/dynamic/" + file);
-    toast("Deleted", "success");
-    renderDynamics(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+    const ok = await deleteFile("src/content/dynamic/" + file);
+    if (ok) {
+      toast("Deleted", "success");
+      renderDynamics(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+    } else {
+      toast("Delete failed: file not found on GitHub", "error");
+    }
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
