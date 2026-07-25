@@ -12,9 +12,15 @@ import { Font } from "astro:assets";
 import { fontConfig } from "@/config";
 import { collectUsedFontCssVars } from "@/utils/fontHelper";
 
+// 当 NO_FONTS 环境变量为 true 时，CI 无法从 CDN 拉取字体（见 astro.config.mjs），
+// 此时跳过所有 <Font> 组件的渲染，避免 Astro Font API 报 FontFamilyNotFound 错误
+const noFonts =
+	typeof process !== "undefined" &&
+	(process.env?.NO_FONTS === "true" || process.env?.NO_FONTS === "1");
+
 // 使用共享的工具函数收集所有需要加载的 CSS 变量名（selected + 各区域字体，去重）
-// enable=false 时返回空集，不会加载任何字体
-const allCssVars = fontConfig.enable
+// enable=false 或 NO_FONTS 时返回空集，不会加载任何字体
+const allCssVars = fontConfig.enable && !noFonts
 	? collectUsedFontCssVars(fontConfig)
 	: new Set<string>();
 
@@ -52,9 +58,9 @@ const navbarTitleFontVar = fontConfig.enable
 ---
 
 <!-- Astro Font API: 自动下载、缓存并生成优化的 @font-face -->
-{fontConfig.enable && Array.from(allCssVars).map((cssVar) => (
+{fontConfig.enable && !noFonts && Array.from(allCssVars).map((cssVar) => (
   <Font
-    cssVariable={cssVar as any}
+    cssVariable={cssVar as unknown as never}
     preload={selectedFontVars.includes(cssVar)}
   />
 ))}
