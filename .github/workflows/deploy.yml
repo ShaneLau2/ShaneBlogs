@@ -45,7 +45,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the site
-        run: pnpm build
+        run: |
+          echo "NO_FONTS=$NO_FONTS"
+          pnpm build
         env:
           ASTRO_SITE_URL: ${{ steps.pages.outputs.base_url }}
           # Hard-code the repo name for base path — this is the most reliable approach
