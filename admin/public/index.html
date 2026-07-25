@@ -774,7 +774,7 @@ async function downloadMusic(videoId, title) {
   btn.disabled = true;
   btn.textContent = 'Downloading...';
   try {
-    const result = await api('/api/music/download', { method: 'POST', body: JSON.stringify({ videoId: videoId, title: title }) });
+    const result = await api('/api/music/playwright-download', { method: 'POST', body: JSON.stringify({ videoId: videoId, title: title }) });
     if (result.success) {
       toast('Downloaded and added to playlist! Go to Deploy.', 'success');
       renderPage('music');

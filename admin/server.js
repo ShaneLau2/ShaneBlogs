@@ -9,6 +9,7 @@ import specRouter from "./routes/spec.js";
 import configRouter from "./routes/config.js";
 import musicRouter from "./routes/music.js";
 import musicSearchRouter from "./routes/music-search.js";
+import musicPlaywrightRouter from "./routes/music-playwright.js";
 import deployRouter from "./routes/deploy.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -77,6 +78,7 @@ app.use("/api/spec", specRouter);
 app.use("/api/config", configRouter);
 app.use("/api/music", musicRouter);
 app.use("/api/music", musicSearchRouter);
+app.use("/api/music", musicPlaywrightRouter);
 app.use("/api/deploy", deployRouter);
 
 // Serve the admin SPA for all non-API routes

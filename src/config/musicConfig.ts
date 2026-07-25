@@ -18,9 +18,16 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 			"https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
 		],
 	},
-	local: {
+		local: {
 		playlist: [
 			{
+				name: "許嵩【洛陽紙】HD 高清官方歌詞版 MV",
+				artist: "Unknown",
+				url: "/assets/music/許嵩洛陽紙HD 高清官方歌詞版 MV.mp3",
+				cover: "",
+				lrc: "",
+			},
+{
 				name: "Wiz Khalifa See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack",
 				artist: "Unknown",
 				url: "/assets/music/Wiz Khalifa - See You Again ft Charlie Puth Official Video Furious 7 Soundtrack.mp3",
