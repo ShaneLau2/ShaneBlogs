@@ -18,9 +18,16 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 			"https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
 		],
 	},
-	local: {
+		local: {
 		playlist: [
 			{
+				name: "許嵩【心安之地】HD 高清官方歌詞版 MV",
+				artist: "Unknown",
+				url: "/assets/music/許嵩心安之地HD 高清官方歌詞版 MV.mp3",
+				cover: "",
+				lrc: "",
+			},
+{
 				name: "許嵩【洛陽紙】HD 高清官方歌詞版 MV",
 				artist: "Unknown",
 				url: "/assets/music/許嵩洛陽紙HD 高清官方歌詞版 MV.mp3",
