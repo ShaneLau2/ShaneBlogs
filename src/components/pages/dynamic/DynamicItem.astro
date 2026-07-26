@@ -36,13 +36,19 @@ const profileLabel = i18n(I18nKey.dynamicProfile).replace(
 	"{name}",
 	profileConfig.name,
 );
+
+// 使用站点时区获取年份，保证与显示时间一致
+const yearInTimezone = new Intl.DateTimeFormat("en-CA", {
+	timeZone: siteConfig.timezone || "UTC",
+	year: "numeric",
+}).format(entry.data.published);
 ---
 
 <dynamic-entry
 	id={anchorId}
 	class="dynamic-entry card-base"
 	data-dynamic-entry
-	data-year={entry.data.published.getUTCFullYear()}
+	data-year={yearInTimezone}
 >
 	<article aria-labelledby={`${anchorId}-author`}>
 		<header class="dynamic-entry-header">

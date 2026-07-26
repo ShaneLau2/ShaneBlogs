@@ -121,10 +121,32 @@ const postUrlPrefix = url("/posts/");
   </div>
 </WidgetLayout>
 
-<script is:inline data-swup-ignore-script define:vars={{ monthNames, weekDays, yearText, currentLang, calendarDataUrl, postUrlPrefix, heatmapWeekTemplate }}>
+<script is:inline data-swup-ignore-script define:vars={{ monthNames, weekDays, yearText, currentLang, calendarDataUrl, postUrlPrefix, heatmapWeekTemplate, timezone: siteConfig.timezone }}>
+  // 获取指定时区的日期组成部分 { year, month, day }
+  function getDateInTimezone(timestamp, tz) {
+    if (!tz || tz === "UTC") {
+      const d = new Date(timestamp);
+      return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+    }
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(timestamp));
+    const get = (type) => Number(parts.find((p) => p.type === type)?.value) || 0;
+    return { year: get("year"), month: get("month") - 1, day: get("day") };
+  }
+
+  // 获取指定时区的"今天"的 { year, month, day }
+  function getTodayInTimezone(tz) {
+    return getDateInTimezone(Date.now(), tz);
+  }
+
   // State variables
-  let displayYear = new Date().getFullYear();
-  let displayMonth = new Date().getMonth();
+  const today = getTodayInTimezone(timezone);
+  let displayYear = today.year;
+  let displayMonth = today.month;
   let currentView = 'day'; // 'day' | 'month' | 'year'
   let postDateMap = {};
   let allPostsData = [];
@@ -145,13 +167,13 @@ const postUrlPrefix = url("/posts/");
       postDateMap = {};
       const yearsSet = new Set();
       allPostsData.forEach(post => {
-        const date = new Date(post.published);
-        const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const d = getDateInTimezone(post.published, timezone);
+        const dateKey = `${d.year}-${String(d.month + 1).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
         if (!postDateMap[dateKey]) {
           postDateMap[dateKey] = [];
         }
         postDateMap[dateKey].push({ id: post.id, title: post.title, published: post.published });
-        yearsSet.add(date.getFullYear());
+        yearsSet.add(d.year);
       });
       
       availableYears = Array.from(yearsSet).sort((a, b) => b - a);
@@ -180,10 +202,10 @@ const postUrlPrefix = url("/posts/");
     // Build weekly post counts: heatmapData[month][week] = count
     const heatmapData = Array.from({ length: 12 }, () => [0, 0, 0, 0]);
     allPostsData.forEach(post => {
-      const date = new Date(post.published);
-      if (date.getFullYear() !== displayYear) return;
-      const month = date.getMonth();
-      const day = date.getDate();
+      const d = getDateInTimezone(post.published, timezone);
+      if (d.year !== displayYear) return;
+      const month = d.month;
+      const day = d.day;
       const week = Math.min(Math.floor((day - 1) / 7), 3); // 0-3
       heatmapData[month][week]++;
     });
@@ -303,8 +325,7 @@ const postUrlPrefix = url("/posts/");
     }
 
     if (resetBtn) {
-      const now = new Date();
-      const isCurrent = displayYear === now.getFullYear() && displayMonth === now.getMonth();
+      const isCurrent = displayYear === today.year && displayMonth === today.month;
       resetBtn.style.display = (currentView === 'day' && isCurrent) ? 'none' : 'flex';
     }
     
@@ -314,11 +335,9 @@ const postUrlPrefix = url("/posts/");
   }
 
   function renderDayView() {
-    const now = new Date();
     const currentYear = displayYear;
     const currentMonth = displayMonth;
-    const currentDate = now.getDate();
-    const isCurrentMonth = currentYear === now.getFullYear() && currentMonth === now.getMonth();
+    const isCurrentMonth = currentYear === today.year && currentMonth === today.month;
     
     // 获取月份的第一天是星期几
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
@@ -352,7 +371,7 @@ const postUrlPrefix = url("/posts/");
     
     // 渲染日历格子
     calendarGrid.innerHTML = calendarDays.map(({day, hasPost, count, dateKey}) => {
-      const isToday = day === currentDate && isCurrentMonth;
+      const isToday = day === today.day && isCurrentMonth;
       const classes = [
         "calendar-day aspect-square flex items-center justify-center rounded-sm text-sm relative cursor-pointer"
       ];
@@ -384,8 +403,8 @@ const postUrlPrefix = url("/posts/");
     
     // 获取当月所有文章
     const currentMonthPosts = allPostsData.filter(post => {
-      const date = new Date(post.published);
-      return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+      const d = getDateInTimezone(post.published, timezone);
+      return d.year === currentYear && d.month === currentMonth;
     });
     
     // 显示当月文章列表
@@ -402,9 +421,9 @@ const postUrlPrefix = url("/posts/");
     // Calculate which months have posts for the currently displayed year
     const monthsWithPosts = new Set();
     allPostsData.forEach(post => {
-        const date = new Date(post.published);
-        if (date.getFullYear() === displayYear) {
-            monthsWithPosts.add(date.getMonth());
+        const d = getDateInTimezone(post.published, timezone);
+        if (d.year === displayYear) {
+            monthsWithPosts.add(d.month);
         }
     });
 
@@ -472,8 +491,8 @@ const postUrlPrefix = url("/posts/");
     
     if (postsList) {
       postsList.innerHTML = currentMonthPosts.map(post => {
-        const date = new Date(post.published);
-        const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
+        const d = getDateInTimezone(post.published, timezone);
+        const dateStr = `${d.month + 1}-${d.day}`;
         return `
         <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded-sm hover:bg-(--btn-plain-bg-hover)">
           <span class="truncate">${post.title}</span>
@@ -532,8 +551,8 @@ const postUrlPrefix = url("/posts/");
 
           // 渲染文章列表
           postsList.innerHTML = posts.map(post => {
-            const date = new Date(post.published);
-            const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
+            const d = getDateInTimezone(post.published, timezone);
+            const dateStr = `${d.month + 1}-${d.day}`;
             return `
             <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded-sm hover:bg-(--btn-plain-bg-hover)">
               <span class="truncate">${post.title}</span>
@@ -567,18 +586,16 @@ const postUrlPrefix = url("/posts/");
   }
 
   function resetToToday() {
-      const now = new Date();
-      displayYear = now.getFullYear();
-      displayMonth = now.getMonth();
+      displayYear = today.year;
+      displayMonth = today.month;
       currentView = 'day';
       renderCalendar();
   }
 
   function initCalendar() {
       // Reset to current date on init
-      const now = new Date();
-      displayYear = now.getFullYear();
-      displayMonth = now.getMonth();
+      displayYear = today.year;
+      displayMonth = today.month;
       
       fetchData();
       

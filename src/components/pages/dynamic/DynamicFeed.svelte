@@ -88,7 +88,12 @@ function applyFilters(resetPage = true) {
 	filtered = entries.filter(
 		(entry) =>
 			(year === "all" ||
-				String(new Date(entry.published).getUTCFullYear()) === year) &&
+				String(
+					new Intl.DateTimeFormat("en-CA", {
+						timeZone: timezone,
+						year: "numeric",
+					}).format(new Date(entry.published)),
+				) === year) &&
 			(!query || entry.searchText.includes(query)),
 	);
 	if (resetPage) currentPage = 1;
@@ -106,7 +111,14 @@ function populateYears() {
 	yearSelect.append(all);
 	const years = [
 		...new Set(
-			entries.map((entry) => new Date(entry.published).getUTCFullYear()),
+			entries.map((entry) =>
+				Number(
+					new Intl.DateTimeFormat("en-CA", {
+						timeZone: timezone,
+						year: "numeric",
+					}).format(new Date(entry.published)),
+				),
+			),
 		),
 	];
 	for (const year of years) {
@@ -127,7 +139,12 @@ function createItem(entry: DynamicData) {
 	permalinkUrl.hash = anchorId;
 	const permalink = `${permalinkUrl.pathname}${permalinkUrl.search}${permalinkUrl.hash}`;
 	root.id = anchorId;
-	root.dataset.year = String(new Date(entry.published).getUTCFullYear());
+	root.dataset.year = String(
+		new Intl.DateTimeFormat("en-CA", {
+			timeZone: timezone,
+			year: "numeric",
+		}).format(new Date(entry.published)),
+	);
 
 	const author = root.querySelector<HTMLElement>("[data-dynamic-author]");
 	if (author) {
@@ -170,7 +187,7 @@ function createItem(entry: DynamicData) {
 			time.textContent = new Intl.DateTimeFormat(
 				document.documentElement.lang || undefined,
 				{
-					timeZone: "UTC",
+					timeZone: timezone,
 					year: "numeric",
 					month: "2-digit",
 					day: "2-digit",
