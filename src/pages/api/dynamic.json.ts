@@ -27,6 +27,10 @@ function parseFrontmatter(content: string): {
 		const kv = line.match(/^(\w+):\s*(.+)$/);
 		if (kv) {
 			let value: unknown = kv[2].trim();
+			// 去掉可选的外层引号
+			if (typeof value === "string") {
+				value = value.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+			}
 			if (value === "true") value = true;
 			else if (value === "false") value = false;
 			else if (kv[1] === "published") value = new Date(value as string);
