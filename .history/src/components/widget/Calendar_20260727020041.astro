@@ -624,9 +624,8 @@ const postUrlPrefix = url("/posts/");
   // 页面加载时渲染日历
   initCalendar();
 
-  // 页面切换时清除缓存并重新渲染，确保日期更新后日历同步刷新
+  // 页面切换时重新渲染
   document.addEventListener("swup:contentReplaced", () => {
-    delete window.__allPostMetaCache;
     setTimeout(initCalendar, 100);
   });
 </script>
