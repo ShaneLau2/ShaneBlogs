@@ -1,8 +1,14 @@
-import type { CollectionEntry } from "astro:content";
+// 通用动态条目类型，用于文件直接读取（不依赖 astro:content）
+export interface DynamicEntry {
+	id: string;
+	body?: string;
+	data: {
+		published: Date;
+		pinned?: boolean;
+	};
+}
 
-export const sortDynamics = (
-	entries: CollectionEntry<"dynamic">[],
-): CollectionEntry<"dynamic">[] =>
+export const sortDynamics = (entries: DynamicEntry[]): DynamicEntry[] =>
 	entries.sort((a, b) => {
 		// 置顶优先，然后按发布时间降序
 		if (a.data.pinned && !b.data.pinned) return -1;
@@ -16,7 +22,7 @@ export const dynamicSlug = (id: string): string =>
 export const dynamicAnchor = (id: string): string =>
 	`dynamic-${id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 
-export const dynamicPlainText = (entry: CollectionEntry<"dynamic">): string =>
+export const dynamicPlainText = (entry: DynamicEntry): string =>
 	(entry.body || "")
 		.replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
 		.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
@@ -25,5 +31,5 @@ export const dynamicPlainText = (entry: CollectionEntry<"dynamic">): string =>
 		.replace(/\s+/g, " ")
 		.trim();
 
-export const dynamicSearchText = (entry: CollectionEntry<"dynamic">): string =>
+export const dynamicSearchText = (entry: DynamicEntry): string =>
 	dynamicPlainText(entry).toLocaleLowerCase();

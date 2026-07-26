@@ -36,16 +36,7 @@ const specCollection = defineCollection({
 	schema: z.object({}),
 });
 
-const dynamicCollection = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/dynamic" }),
-	schema: z.object({
-		published: z.coerce.date(),
-		pinned: z.boolean().optional().default(false),
-	}),
-});
-
 export const collections = {
-	dynamic: dynamicCollection,
 	posts: postsCollection,
 	spec: specCollection,
 };
