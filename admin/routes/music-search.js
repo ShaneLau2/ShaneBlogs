@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFile, writeFile } from "../utils/file-utils.js";
+import { addToPlaylist } from "../utils/music-playlist.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
@@ -111,45 +111,16 @@ router.post("/download", async (req, res) => {
 		const buffer = Buffer.from(await dlRes.arrayBuffer());
 		fs.writeFileSync(filePath, buffer);
 
-		// Step 6: Update playlist config
-		const esc = (s) => JSON.stringify(s || "");
-		const entryLines = [
-			"\t\t\t{",
-			"\t\t\t\tname: " + esc(title || safeName) + ",",
-			"\t\t\t\tartist: " + esc("Unknown") + ",",
-			"\t\t\t\turl: " + esc("/assets/music/" + fileName) + ",",
-			"\t\t\t\tcover: \"\",",
-			"\t\t\t\tlrc: \"\",",
-			"\t\t\t}",
-		].join("\n");
+		// Step 6: Add to the structured playlist data file
+		addToPlaylist({
+			name: title || safeName,
+			artist: "Unknown",
+			url: "/assets/music/" + fileName,
+			cover: "",
+			lrc: "",
+		});
 
-		const configPath = "src/config/musicConfig.ts";
-		const configContent = readFile(configPath);
-		let configUpdated = false;
-		let existingRaw = "";
-		const ps = configContent.indexOf("playlist: [");
-		if (ps !== -1) {
-			let braceDepth = 0, bracketDepth = 0, endPos = -1;
-			const inner = configContent.slice(ps + "playlist: [".length);
-			for (let i = 0; i < inner.length; i++) {
-				const ch = inner[i];
-				if (ch === "{") braceDepth++;
-				if (ch === "}") braceDepth--;
-				if (ch === "[") bracketDepth++;
-				if (ch === "]") {
-					if (braceDepth === 0 && bracketDepth === 0) { endPos = i; break; }
-					bracketDepth--;
-				}
-			}
-			if (endPos !== -1) existingRaw = inner.slice(0, endPos).trim();
-		}
-		const hasExisting = existingRaw.length > 0;
-		const allEntries = hasExisting ? `${entryLines},\n${existingRaw}` : `${entryLines}`;
-		const header = configContent.slice(0, configContent.indexOf("local:"));
-		const updated = `${header}\tlocal: {\n\t\tplaylist: [\n${allEntries}\n\t\t],\n\t},\n};`;
-		if (ps !== -1) { writeFile(configPath, updated); configUpdated = true; }
-
-		res.json({ success: true, file: fileName, configUpdated });
+		res.json({ success: true, file: fileName, configUpdated: true });
 	} catch (err) {
 		res.status(500).json({ error: `Download failed: ${err.message}` });
 	}

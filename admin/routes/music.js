@@ -3,7 +3,7 @@ import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFile, writeFile } from "../utils/file-utils.js";
+import { addToPlaylist } from "../utils/music-playlist.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
@@ -32,7 +32,34 @@ const storage = multer.diskStorage({
 	},
 });
 
-const upload = multer({ storage });
+// Only audio files for the "audio" field and image files for "cover" are allowed.
+// Browsers sometimes send application/octet-stream, so fall back to the extension.
+const AUDIO_EXT = /\.(mp3|flac|wav|ogg|m4a|aac)$/i;
+const AUDIO_MIME = /^audio\//;
+const COVER_EXT = /\.(webp|png|jpe?g|avif)$/i;
+const COVER_MIME = /^image\//;
+
+const upload = multer({
+	storage,
+	limits: {
+		// Audio up to ~60MB, covers up to ~5MB
+		fileSize: 60 * 1024 * 1024,
+		files: 2,
+	},
+	fileFilter: (req, file, cb) => {
+		const isAudio = file.fieldname === "audio";
+		const isCover = file.fieldname === "cover";
+		const ext = file.originalname.match(/\.[^.]+$/)?.[0] || "";
+		if (
+			(isAudio && (AUDIO_MIME.test(file.mimetype) || (file.mimetype === "application/octet-stream" && AUDIO_EXT.test(ext)))) ||
+			(isCover && (COVER_MIME.test(file.mimetype) || (file.mimetype === "application/octet-stream" && COVER_EXT.test(ext))))
+		) {
+			cb(null, true);
+		} else {
+			cb(new Error(`Unsupported file type for field "${file.fieldname}": ${file.mimetype || ext}`));
+		}
+	},
+});
 const router = Router();
 
 // List all music files
@@ -69,57 +96,14 @@ router.post("/upload-and-add", upload.fields([{ name: "audio", maxCount: 1 }, { 
 		const artist = req.body.artist || "Unknown";
 
 		// Build playlist entry — multer already sanitized the filename
-		const esc = (s) => JSON.stringify(s || "");
 		const fileName = result.audio || "unknown.mp3";
-		const entryLines = [
-			"\t\t\t{",
-			"\t\t\t\tname: " + esc(songName) + ",",
-			"\t\t\t\tartist: " + esc(artist) + ",",
-			"\t\t\t\turl: " + esc("/assets/music/" + fileName) + ",",
-			"\t\t\t\tcover: " + esc(result.cover ? "/assets/music/cover/" + result.cover : "") + ",",
-			"\t\t\t\tlrc: \"\",",
-			"\t\t\t}",
-		].join("\n");
-
-		// Read current config and extract existing entries
-		const configPath = "src/config/musicConfig.ts";
-		const configContent = readFile(configPath);
-
-		// Extract entries between playlist: [...] — track brace depth to handle [Official Video] inside strings
-		let existingRaw = "";
-		const ps = configContent.indexOf("playlist: [");
-		if (ps !== -1) {
-			let braceDepth = 0;
-			let bracketDepth = 0;
-			let endPos = -1;
-			const inner = configContent.slice(ps + "playlist: [".length);
-			for (let i = 0; i < inner.length; i++) {
-				const ch = inner[i];
-				if (ch === "{") braceDepth++;
-				if (ch === "}") braceDepth--;
-				if (ch === "[") bracketDepth++;
-				if (ch === "]") {
-					if (braceDepth === 0 && bracketDepth === 0) {
-						endPos = i;
-						break;
-					}
-					bracketDepth--;
-				}
-			}
-			if (endPos !== -1) {
-				existingRaw = inner.slice(0, endPos).trim();
-			}
-		}
-		// Rebuild full config from template
-		const hasExisting = existingRaw.length > 0;
-		const allEntries = hasExisting
-			? `${entryLines},\n${existingRaw}`
-			: `${entryLines}`;
-
-		const header = configContent.slice(0, configContent.indexOf("local:"));
-		const newConfig = `${header}\tlocal: {\n\t\tplaylist: [\n${allEntries}\n\t\t],\n\t},\n};`;
-
-		writeFile(configPath, newConfig);
+		addToPlaylist({
+			name: songName,
+			artist,
+			url: "/assets/music/" + fileName,
+			cover: result.cover ? "/assets/music/cover/" + result.cover : "",
+			lrc: "",
+		});
 		result.configUpdated = true;
 
 		res.json({ success: true, ...result });
