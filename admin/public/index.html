@@ -129,6 +129,7 @@ let API_BASE = "";
 let config = {};
 let authed = false;
 let adminUser = null;
+let sessionToken = localStorage.getItem("firefly_admin_session") || "";
 let currentPage = "dashboard";
 let editingPlaylistIndex = -1; // index of the playlist row being edited
 let dragPlaylistIndex = -1; // index of the playlist row being dragged
@@ -191,6 +192,7 @@ async function apiGh(path, options = {}) {
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/vnd.github.v3+json",
+      ...authHeaders(),
       ...options.headers,
     },
     ...options,
@@ -200,11 +202,18 @@ async function apiGh(path, options = {}) {
   return data;
 }
 
+// Cross-origin auth: browsers block third-party cookies (github.io →
+// workers.dev), so the SPA authenticates with an Authorization header
+// carrying the session token delivered via the OAuth callback fragment.
+function authHeaders() {
+  return sessionToken ? { Authorization: "Bearer " + sessionToken } : {};
+}
+
 // Worker endpoints beyond the /api/gh proxy (e.g. music search/download).
 async function apiWorker(path, options = {}) {
   const res = await fetch(API_BASE + path, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: { "Content-Type": "application/json", ...authHeaders(), ...options.headers },
     ...options,
   });
   const data = await res.json().catch(() => ({}));
@@ -1350,6 +1359,8 @@ function renderLogin() {
 }
 
 function logout() {
+  localStorage.removeItem("firefly_admin_session");
+  sessionToken = "";
   fetch(API_BASE + "/api/logout", { method: "POST", credentials: "include" }).finally(() => location.reload());
 }
 
@@ -1383,12 +1394,27 @@ function escapeAttr(str) {
   const footer = document.getElementById("login-status");
 
   if (MODE === "github") {
+    // OAuth callback lands on /admin/#session=<token>; store it and strip
+    // the fragment so it never lingers in the address bar.
+    const frag = location.hash.match(/session=([^&]+)/);
+    if (frag) {
+      sessionToken = decodeURIComponent(frag[1]);
+      localStorage.setItem("firefly_admin_session", sessionToken);
+      history.replaceState(null, "", location.pathname + location.search);
+    }
     try {
-      const me = await fetch(API_BASE + "/api/me", { credentials: "include" });
+      const me = await fetch(API_BASE + "/api/me", {
+        credentials: "include",
+        headers: authHeaders(),
+      });
       if (me.ok) {
         adminUser = await me.json();
         authed = true;
         footer.innerHTML = "✅ " + escapeHtml(adminUser.login) + ' · <a href="#" onclick="logout();return false;">logout</a>';
+      } else {
+        // Session invalid or expired — drop any stale token.
+        sessionToken = "";
+        localStorage.removeItem("firefly_admin_session");
       }
     } catch { /* worker unreachable */ }
     if (!authed) {

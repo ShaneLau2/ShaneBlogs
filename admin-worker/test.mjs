@@ -34,7 +34,8 @@ function check(name, cond, extra = "") {
 function req(path, init = {}) {
 	const url = `https://firefly-admin-auth.test.workers.dev${path}`;
 	const headers = new Headers(init.headers || {});
-	headers.set("Origin", ENV.APP_URL);
+	// Browsers send Origin as scheme+host+port only — never a path.
+	headers.set("Origin", new URL(ENV.APP_URL).origin);
 	return new Request(url, { ...init, headers });
 }
 
@@ -160,8 +161,22 @@ try {
 		res.headers.get("Access-Control-Allow-Credentials") === "true",
 	);
 	check(
-		"preflight → allow-origin matches APP_URL",
-		res.headers.get("Access-Control-Allow-Origin") === ENV.APP_URL,
+		"preflight → echoes matching browser origin",
+		res.headers.get("Access-Control-Allow-Origin") === new URL(ENV.APP_URL).origin,
+	);
+	check(
+		"preflight → allows Authorization header",
+		(res.headers.get("Access-Control-Allow-Headers") || "").includes("Authorization"),
+	);
+
+	// Browser Origin never carries a path; echo it when it matches APP_URL's origin.
+	res = await call("/api/me", {
+		method: "OPTIONS",
+		headers: { Origin: new URL(ENV.APP_URL).origin },
+	});
+	check(
+		"preflight → echoes matching browser origin (no path)",
+		res.headers.get("Access-Control-Allow-Origin") === new URL(ENV.APP_URL).origin,
 	);
 
 	console.log("\n— OAuth callback —");
@@ -183,6 +198,10 @@ try {
 		"callback → redirects to APP_URL/admin/",
 		(res.headers.get("Location") || "").startsWith(ENV.APP_URL + "/admin/"),
 	);
+	check(
+		"callback → carries session token in URL fragment",
+		(res.headers.get("Location") || "").includes("#session="),
+	);
 	const setCookie = res.headers.get("Set-Cookie") || "";
 	check("callback → sets admin_session cookie", setCookie.includes("admin_session="));
 	check(
@@ -202,6 +221,31 @@ try {
 
 	res = await call("/api/me", { headers: { Cookie: authCookie } });
 	check("GET /api/me with valid session → 200", res.status === 200);
+
+	res = await call("/api/me", {
+		headers: { Authorization: "Bearer " + encrypted },
+	});
+	check("GET /api/me with Authorization header → 200", res.status === 200);
+	check(
+		"me via header → returns login",
+		(await res.json()).login === "ShaneLau2",
+	);
+	res = await call("/api/me", {
+		headers: { Authorization: "Bearer garbage-token" },
+	});
+	check("GET /api/me with bad bearer → 401", res.status === 401);
+	res = await call("/api/me", {
+		headers: { Authorization: "Bearer " + encrypted },
+	});
+	check("me via header → proxy PUT works",
+		(
+			await call("/api/gh/repos/x/contents/foo.md", {
+				method: "PUT",
+				headers: { Authorization: "Bearer " + encrypted, "Content-Type": "application/json" },
+				body: JSON.stringify({ message: "t", content: "aGk=" }),
+			})
+		).status === 200,
+	);
 	check(
 		"me → returns login",
 		(await res.json()).login === "ShaneLau2",
@@ -232,7 +276,7 @@ try {
 	);
 	check(
 		"proxy → adds CORS headers to response",
-		res.headers.get("Access-Control-Allow-Origin") === ENV.APP_URL,
+		res.headers.get("Access-Control-Allow-Origin") === new URL(ENV.APP_URL).origin,
 	);
 
 	console.log("\n— Music search / download —");

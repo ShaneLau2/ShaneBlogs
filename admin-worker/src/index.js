@@ -44,14 +44,18 @@ function json(data, status = 200, headers = {}) {
 
 function corsHeaders(env, request) {
 	const origin = request?.headers?.get("Origin");
+	// Browsers send Origin as scheme+host+port only (never a path), so
+	// compare against APP_URL's origin and echo the request Origin when it
+	// matches — echoing the full APP_URL would fail the CORS check.
+	const appOrigin = env.APP_URL ? new URL(env.APP_URL).origin : null;
 	const allow =
-		env.APP_URL && origin === env.APP_URL ? origin : env.APP_URL || origin || "*";
+		origin && appOrigin && origin === appOrigin ? origin : env.APP_URL || origin || "*";
 	return {
 		"Access-Control-Allow-Origin": allow,
 		"Access-Control-Allow-Credentials": "true",
 		"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
 		"Access-Control-Allow-Headers":
-			"Content-Type, Accept, If-None-Match, X-GitHub-Api-Version",
+			"Content-Type, Accept, If-None-Match, X-GitHub-Api-Version, Authorization",
 		"Access-Control-Max-Age": "86400",
 		Vary: "Origin",
 	};
@@ -129,7 +133,13 @@ export async function decryptSession(secret, cookie) {
 }
 
 async function getSession(env, request) {
-	const raw = getCookie(request, "admin_session");
+	// Accept the session either as the admin_session cookie or as a
+	// "Bearer <token>" header. The SPA relies on the header cross-origin
+	// (github.io → workers.dev), where third-party cookies are routinely
+	// blocked by browsers.
+	let raw = getCookie(request, "admin_session");
+	const auth = request.headers.get("Authorization");
+	if (!raw && auth?.startsWith("Bearer ")) raw = auth.slice(7);
 	if (!raw) return null;
 	const session = await decryptSession(env.AUTH_SECRET, raw);
 	if (!session || !session.token) return null;
@@ -229,7 +239,10 @@ async function callback(env, request, url) {
 	};
 	const encrypted = await encryptSession(env.AUTH_SECRET, session);
 
-	const target = `${env.APP_URL || url.origin}/admin/`;
+	// Deliver the session to the SPA via a URL fragment (never a query
+	// string) so the panel can authenticate with an Authorization header
+	// instead of relying on a cross-site cookie.
+	const target = `${env.APP_URL || url.origin}/admin/#session=${encodeURIComponent(encrypted)}`;
 	const res = new Response(null, { status: 302, headers: { Location: target } });
 	res.headers.append(
 		"Set-Cookie",
