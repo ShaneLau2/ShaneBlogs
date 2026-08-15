@@ -340,6 +340,16 @@ const MP3_BROWSER_HEADERS = {
 		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
 };
 
+/** Truncated response body for diagnostics (thetacloud rejects with 403s). */
+async function bodySnippet(res, max = 160) {
+	try {
+		const text = await res.clone().text();
+		return text.slice(0, max);
+	} catch {
+		return "";
+	}
+}
+
 /** GET /api/music/search?q= — search mp3juice for songs. */
 async function musicSearch(env, request, url) {
 	const cors = corsHeaders(env, request);
@@ -418,7 +428,9 @@ async function musicDownload(env, request) {
 		const authRes = await fetch(`https://theta.thetacloud.org/api/v1/auth?_=${Date.now()}`, {
 			headers: MP3_BROWSER_HEADERS,
 		});
-		if (!authRes.ok) throw new Error(`Auth failed: ${authRes.status}`);
+		if (!authRes.ok) {
+			throw new Error(`Auth failed: ${authRes.status} — ${await bodySnippet(authRes)}`);
+		}
 		const auth = await authRes.json();
 		if (auth.error) throw new Error(`Auth error: ${auth.error}`);
 
@@ -426,7 +438,9 @@ async function musicDownload(env, request) {
 		const initRes = await fetch(`https://theta.thetacloud.org/api/v1/init?_=${Date.now()}`, {
 			headers: { ...MP3_BROWSER_HEADERS, Authorization: `Bearer ${auth.key}` },
 		});
-		if (!initRes.ok) throw new Error(`Init failed: ${initRes.status}`);
+		if (!initRes.ok) {
+			throw new Error(`Init failed: ${initRes.status} — ${await bodySnippet(initRes)}`);
+		}
 		const init = await initRes.json();
 		if (init.error) throw new Error(`Init error: ${init.error}`);
 
@@ -435,7 +449,9 @@ async function musicDownload(env, request) {
 			? `${init.convertURL}&v=${videoId}&f=mp3&_=${Date.now()}`
 			: `${init.convertURL}?v=${videoId}&f=mp3&_=${Date.now()}`;
 		const convRes = await fetch(convertUrl, { headers: MP3_BROWSER_HEADERS });
-		if (!convRes.ok) throw new Error(`Convert failed: ${convRes.status}`);
+		if (!convRes.ok) {
+			throw new Error(`Convert failed: ${convRes.status} — ${await bodySnippet(convRes)}`);
+		}
 		const conv = await convRes.json();
 		if (conv.error) throw new Error(`Convert error: ${conv.error}`);
 
@@ -456,7 +472,9 @@ async function musicDownload(env, request) {
 		// 5. Download the MP3
 		const finalUrl = `${downloadUrl}&v=${videoId}&f=mp3&r=mp3juice.sc`;
 		const dlRes = await fetch(finalUrl, { headers: MP3_BROWSER_HEADERS });
-		if (!dlRes.ok) throw new Error(`Download failed: HTTP ${dlRes.status}`);
+		if (!dlRes.ok) {
+			throw new Error(`Download failed: HTTP ${dlRes.status} — ${await bodySnippet(dlRes)}`);
+		}
 		const bytes = new Uint8Array(await dlRes.arrayBuffer());
 		if (bytes.length < 1000) throw new Error("Downloaded file is too small or missing");
 		if (bytes.length > 60 * 1024 * 1024) throw new Error("Downloaded file exceeds 60MB");

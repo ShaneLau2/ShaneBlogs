@@ -46,6 +46,7 @@ async function call(path, init) {
 // Stub GitHub API so tests never touch the network.
 const realFetch = globalThis.fetch;
 const githubCalls = [];
+let INIT_FAIL = false; // flip to simulate thetacloud rejecting the init step
 globalThis.fetch = async (url, init = {}) => {
 	const u = String(url);
 	githubCalls.push({ url: u, init });
@@ -90,6 +91,7 @@ globalThis.fetch = async (url, init = {}) => {
 		});
 	}
 	if (u.includes("theta.thetacloud.org/api/v1/init")) {
+		if (INIT_FAIL) return new Response("Forbidden by nginx", { status: 403 });
 		return new Response(
 			JSON.stringify({ convertURL: "https://theta.thetacloud.org/api/v1/convert" }),
 			{ status: 200, headers: { "Content-Type": "application/json" } },
@@ -325,6 +327,19 @@ try {
 			})
 		).status === 401,
 	);
+
+	INIT_FAIL = true;
+	res = await call("/api/music/download", {
+		method: "POST",
+		headers: { Cookie: authCookie, "Content-Type": "application/json" },
+		body: JSON.stringify({ videoId: "v1", title: "T", repo: "x/y", branch: "main" }),
+	});
+	const initErr = (await res.json()).error || "";
+	check(
+		"download → init 403 surfaces status + response body",
+		res.status === 500 && initErr.includes("Init failed: 403") && initErr.includes("Forbidden by nginx"),
+	);
+	INIT_FAIL = false;
 
 	console.log("\n— Unauthorized owner —");
 
