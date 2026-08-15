@@ -66,6 +66,54 @@ globalThis.fetch = async (url, init = {}) => {
 			headers: { "Content-Type": "application/json" },
 		});
 	}
+	if (u.includes("api.github.com/repos/ShaneLau2/ShaneBlogs/contents/public/assets/music/")) {
+		return new Response(JSON.stringify({ message: "uploaded", content: { name: "song.mp3" } }), {
+			status: 201,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+	if (u.includes("api.github.com/repos/ShaneLau2/ShaneBlogs/contents/src/data/music-playlist.json")) {
+		// GET (existing file) vs PUT (write) — reuse the same stub
+		return new Response(
+			JSON.stringify({
+				sha: "pl-sha-1",
+				content: btoa(unescape(encodeURIComponent(JSON.stringify([{ name: "old" }])))),
+			}),
+			{ status: 200, headers: { "Content-Type": "application/json" } },
+		);
+	}
+	if (u.includes("theta.thetacloud.org/api/v1/auth")) {
+		return new Response(JSON.stringify({ key: "theta-key" }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+	if (u.includes("theta.thetacloud.org/api/v1/init")) {
+		return new Response(
+			JSON.stringify({ convertURL: "https://theta.thetacloud.org/api/v1/convert" }),
+			{ status: 200, headers: { "Content-Type": "application/json" } },
+		);
+	}
+	if (u.includes("api/v1/convert")) {
+		return new Response(JSON.stringify({ downloadURL: "https://dl.test/file" }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+	if (u.includes("dl.test/file")) {
+		// a fake MP3 body, big enough to pass the worker's minimum-size check
+		const fakeMp3 = new Uint8Array(2048).fill(0x44);
+		fakeMp3[0] = 0x49;
+		fakeMp3[1] = 0x44;
+		fakeMp3[2] = 0x33;
+		return new Response(fakeMp3, { status: 200 });
+	}
+	if (u.includes("mp3juice.sc/api/v1/search")) {
+		return new Response(
+			JSON.stringify({ yt: [{ id: "v1", title: "Test Song", duration: "3:00" }] }),
+			{ status: 200, headers: { "Content-Type": "application/json" } },
+		);
+	}
 	return new Response(JSON.stringify({ error: "unexpected url" }), {
 		status: 500,
 		headers: { "Content-Type": "application/json" },
@@ -185,6 +233,53 @@ try {
 	check(
 		"proxy → adds CORS headers to response",
 		res.headers.get("Access-Control-Allow-Origin") === ENV.APP_URL,
+	);
+
+	console.log("\n— Music search / download —");
+
+	res = await call("/api/music/search?q=test", { headers: { Cookie: authCookie } });
+	check("GET /api/music/search with session → 200", res.status === 200);
+	const searchBody = await res.json();
+	check(
+		"search → returns results with id/title",
+		Array.isArray(searchBody.results) && searchBody.results[0]?.id === "v1",
+	);
+	check(
+		"search → no session → 401",
+		(await call("/api/music/search?q=test")).status === 401,
+	);
+
+	githubCalls.length = 0;
+	res = await call("/api/music/download", {
+		method: "POST",
+		headers: { Cookie: authCookie, "Content-Type": "application/json" },
+		body: JSON.stringify({
+			videoId: "v1",
+			title: "Test Song",
+			repo: "ShaneLau2/ShaneBlogs",
+			branch: "master",
+		}),
+	});
+	check("POST /api/music/download → 200", res.status === 200);
+	const dlBody = await res.json();
+	check("download → success + file name", dlBody.success === true && dlBody.file === "Test Song.mp3");
+	check(
+		"download → pushed mp3 to repo contents API",
+		githubCalls.some((c) => c.url.includes("contents/public/assets/music/Test%20Song.mp3")),
+	);
+	check(
+		"download → updated playlist file",
+		githubCalls.some((c) => c.url.includes("contents/src/data/music-playlist.json") && c.init?.method === "PUT"),
+	);
+	check(
+		"download → no session → 401",
+		(
+			await call("/api/music/download", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ videoId: "v1" }),
+			})
+		).status === 401,
 	);
 
 	console.log("\n— Unauthorized owner —");

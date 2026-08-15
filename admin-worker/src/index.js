@@ -316,6 +316,224 @@ async function proxy(env, request, url) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Music search / download (online mode)                               */
+/* ------------------------------------------------------------------ */
+
+const MP3JUICE = "https://mp3juice.sc";
+const MP3_BROWSER_HEADERS = {
+	Origin: MP3JUICE,
+	Referer: `${MP3JUICE}/`,
+	"User-Agent":
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+};
+
+/** GET /api/music/search?q= — search mp3juice for songs. */
+async function musicSearch(env, request, url) {
+	const cors = corsHeaders(env, request);
+	const session = await getSession(env, request);
+	if (!session) return json({ error: "Unauthorized" }, 401, cors);
+
+	const query = url.searchParams.get("q");
+	if (!query) return json({ error: "Query is required" }, 400, cors);
+
+	try {
+		const b64 = btoa(encodeURIComponent(query));
+		const target = `${MP3JUICE}/api/v1/search?y=y&q=${b64}&_=${Date.now()}`;
+		const response = await fetch(target, { headers: MP3_BROWSER_HEADERS });
+		if (!response.ok) throw new Error(`mp3juice returned ${response.status}`);
+		const data = await response.json();
+		const results = (data.yt || []).slice(0, 10).map((v) => ({
+			id: v.id,
+			title: v.title,
+			duration: v.duration,
+			source: "youtube",
+		}));
+		return json({ results }, 200, cors);
+	} catch (err) {
+		return json({ error: `Search failed: ${err.message}` }, 500, cors);
+	}
+}
+
+function base64FromBytes(bytes) {
+	let binary = "";
+	const chunk = 0x8000;
+	for (let i = 0; i < bytes.length; i += chunk) {
+		binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+	}
+	return btoa(binary);
+}
+
+async function ghJson(headers, target, init = {}) {
+	const res = await fetch(target, { ...init, headers });
+	if (!res.ok) {
+		const text = await res.text().catch(() => "");
+		throw new Error(`GitHub ${res.status}: ${text.slice(0, 300)}`);
+	}
+	return res.json();
+}
+
+/**
+ * POST /api/music/download — download an MP3 via mp3juice and push it to
+ * the blog repo, then add it to the structured playlist.
+ *
+ * Body: { videoId, title, repo, branch }
+ */
+async function musicDownload(env, request) {
+	const cors = corsHeaders(env, request);
+	const session = await getSession(env, request);
+	if (!session) return json({ error: "Unauthorized" }, 401, cors);
+
+	let body = {};
+	try {
+		body = await request.json();
+	} catch {}
+	const { videoId, title, repo, branch } = body;
+	if (!videoId) return json({ error: "videoId is required" }, 400, cors);
+	if (!repo || !branch) {
+		return json({ error: "repo and branch are required" }, 400, cors);
+	}
+
+	const safeName = (title || "audio")
+		.replace(/[^\p{L}\p{N}\s\-()]/gu, "")
+		.replace(/\s+/g, " ")
+		.trim()
+		.slice(0, 80);
+	const fileName = `${safeName}.mp3`;
+
+	try {
+		// 1. Auth
+		const authRes = await fetch(`https://theta.thetacloud.org/api/v1/auth?_=${Date.now()}`, {
+			headers: MP3_BROWSER_HEADERS,
+		});
+		if (!authRes.ok) throw new Error(`Auth failed: ${authRes.status}`);
+		const auth = await authRes.json();
+		if (auth.error) throw new Error(`Auth error: ${auth.error}`);
+
+		// 2. Init
+		const initRes = await fetch(`https://theta.thetacloud.org/api/v1/init?_=${Date.now()}`, {
+			headers: { ...MP3_BROWSER_HEADERS, Authorization: `Bearer ${auth.key}` },
+		});
+		if (!initRes.ok) throw new Error(`Init failed: ${initRes.status}`);
+		const init = await initRes.json();
+		if (init.error) throw new Error(`Init error: ${init.error}`);
+
+		// 3. Convert
+		const convertUrl = init.convertURL.includes("?")
+			? `${init.convertURL}&v=${videoId}&f=mp3&_=${Date.now()}`
+			: `${init.convertURL}?v=${videoId}&f=mp3&_=${Date.now()}`;
+		const convRes = await fetch(convertUrl, { headers: MP3_BROWSER_HEADERS });
+		if (!convRes.ok) throw new Error(`Convert failed: ${convRes.status}`);
+		const conv = await convRes.json();
+		if (conv.error) throw new Error(`Convert error: ${conv.error}`);
+
+		// 4. Follow redirect if present
+		let downloadUrl = conv.downloadURL;
+		if (conv.redirect && conv.redirectURL) {
+			const redirectUrl = conv.redirectURL.includes("?")
+				? `${conv.redirectURL}&v=${videoId}&f=mp3&_=${Date.now()}`
+				: `${conv.redirectURL}?v=${videoId}&f=mp3&_=${Date.now()}`;
+			const redirRes = await fetch(redirectUrl, { headers: MP3_BROWSER_HEADERS });
+			if (redirRes.ok) {
+				const redir = await redirRes.json();
+				downloadUrl = redir.downloadURL || downloadUrl;
+			}
+		}
+		if (!downloadUrl) throw new Error("Could not get download URL");
+
+		// 5. Download the MP3
+		const finalUrl = `${downloadUrl}&v=${videoId}&f=mp3&r=mp3juice.sc`;
+		const dlRes = await fetch(finalUrl, { headers: MP3_BROWSER_HEADERS });
+		if (!dlRes.ok) throw new Error(`Download failed: HTTP ${dlRes.status}`);
+		const bytes = new Uint8Array(await dlRes.arrayBuffer());
+		if (bytes.length < 1000) throw new Error("Downloaded file is too small or missing");
+		if (bytes.length > 60 * 1024 * 1024) throw new Error("Downloaded file exceeds 60MB");
+
+		// 6. Upload the file to the repo (contents API, base64)
+		const ghHeaders = {
+			Authorization: `Bearer ${session.token}`,
+			"User-Agent": "firefly-admin-auth",
+			Accept: "application/vnd.github+json",
+			"Content-Type": "application/json",
+		};
+		const musicPath = `public/assets/music/${fileName}`;
+		const encodedPath = musicPath.split("/").map(encodeURIComponent).join("/");
+		let sha;
+		try {
+			const existing = await fetch(
+				`${GH_API}/repos/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`,
+				{ headers: ghHeaders },
+			);
+			if (existing.ok) sha = (await existing.json()).sha;
+		} catch {}
+		await ghJson(
+			ghHeaders,
+			`${GH_API}/repos/${repo}/contents/${encodedPath}`,
+			{
+				method: "PUT",
+				body: JSON.stringify({
+					message: `Add music: ${safeName}`,
+					content: base64FromBytes(bytes),
+					sha,
+					branch,
+				}),
+			},
+		);
+
+		// 7. Update the structured playlist
+		const playlistPath = "src/data/music-playlist.json";
+		const encPlaylistPath = playlistPath.split("/").map(encodeURIComponent).join("/");
+		let playlist = [];
+		let plSha;
+		try {
+			const existing = await fetch(
+				`${GH_API}/repos/${repo}/contents/${encPlaylistPath}?ref=${encodeURIComponent(branch)}`,
+				{ headers: ghHeaders },
+			);
+			if (existing.ok) {
+				const file = await existing.json();
+				plSha = file.sha;
+				try {
+					const raw = atob(file.content.replace(/\n/g, ""));
+					const decoded = decodeURIComponent(escape(raw));
+					playlist = JSON.parse(decoded);
+				} catch {}
+			}
+		} catch {}
+		if (!Array.isArray(playlist)) playlist = [];
+		playlist.unshift({
+			name: title || safeName,
+			artist: "Unknown",
+			url: `/assets/music/${fileName}`,
+			cover: "",
+			lrc: "",
+		});
+		const playlistContent = JSON.stringify(playlist, null, "\t") + "\n";
+		const utf8 = unescape(encodeURIComponent(playlistContent));
+		await ghJson(
+			ghHeaders,
+			`${GH_API}/repos/${repo}/contents/${encPlaylistPath}`,
+			{
+				method: "PUT",
+				body: JSON.stringify({
+					message: "Add music: " + (title || safeName),
+					content: btoa(utf8),
+					sha: plSha,
+					branch,
+				}),
+			},
+		);
+
+		return json(
+			{ success: true, file: fileName, configUpdated: true },
+			200,
+			cors,
+		);
+	} catch (err) {
+		return json({ error: `Download failed: ${err.message}` }, 500, cors);
+	}
+}
+
+/* ------------------------------------------------------------------ */
 /* Entry point                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -335,6 +553,8 @@ export default {
 		if (path === "/api/logout") return logout(env, request);
 		if (path === "/api/me") return me(env, request);
 		if (path.startsWith("/api/gh/")) return proxy(env, request, url);
+		if (path === "/api/music/search") return musicSearch(env, request, url);
+		if (path === "/api/music/download") return musicDownload(env, request);
 		return json({ error: "Not found" }, 404, corsHeaders(env, request));
 	},
 };

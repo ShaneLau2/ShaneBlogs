@@ -29,6 +29,8 @@ SPA ──▶ /api/gh/repos/... ──▶ Worker injects `Authorization: Bearer 
 | `GET /api/me` | current session info (or 401) |
 | `POST /api/logout` | clear the session cookie |
 | `GET\|POST\|PUT\|DELETE /api/gh/*` | proxy to `api.github.com/*` with the session token |
+| `GET /api/music/search?q=` | search mp3juice for songs (online music search) |
+| `POST /api/music/download` | download an MP3 via mp3juice, push it to the repo (`public/assets/music/`) and prepend it to `src/data/music-playlist.json`; body `{ videoId, title, repo, branch }` |
 
 ## Setup
 

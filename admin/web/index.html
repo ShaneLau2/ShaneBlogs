@@ -185,6 +185,18 @@ async function apiGh(path, options = {}) {
   return data;
 }
 
+// Worker endpoints beyond the /api/gh proxy (e.g. music search/download).
+async function apiWorker(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...options.headers },
+    ...options,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+  return data;
+}
+
 async function ghGet(path) { return apiGh(path); }
 async function ghPut(path, body) { return apiGh(path, { method: "PUT", body: JSON.stringify(body) }); }
 async function ghDelete(path, options) { return apiGh(path, { method: "DELETE", ...options }); }
@@ -854,7 +866,6 @@ async function renderMusic(el, title, desc) {
           <button type="submit" class="btn btn-primary btn-sm">Upload & Add to Playlist</button>
         </form>
       </div>
-      ${MODE === "local" ? `
       <div class="card">
         <div class="card-header"><h3>Search Music</h3></div>
         <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem;">Search YouTube for songs, download MP3, and auto-add to playlist.</p>
@@ -863,7 +874,8 @@ async function renderMusic(el, title, desc) {
           <button class="btn btn-primary" onclick="searchMusic()">Search</button>
         </div>
         <div id="music-search-results" style="margin-top:.75rem;"></div>
-      </div>` : ""}
+        <div class="markdown-hint">${MODE === "local" ? "本地模式：服务端直接下载到 public/assets/music 并写入播放列表。" : "在线模式：由 Cloudflare Worker 下载并推送到仓库，随后自动部署生效。"}</div>
+      </div>
       <div class="card">
         <div class="card-header"><h3>Playlist (${playlist.length})</h3>
           <button class="btn btn-primary btn-sm" onclick="togglePlaylistForm()">＋ Add Track</button>
@@ -1001,7 +1013,9 @@ async function searchMusic() {
   const div = document.getElementById("music-search-results");
   div.innerHTML = '<div class="loading">Searching mp3juice...</div>';
   try {
-    const data = await apiLocal("/music/mp3juice-search?q=" + encodeURIComponent(q));
+    const data = MODE === "local"
+      ? await apiLocal("/music/mp3juice-search?q=" + encodeURIComponent(q))
+      : await apiWorker("/api/music/search?q=" + encodeURIComponent(q));
     const r = data.results || [];
     if (r.length === 0) { div.innerHTML = '<div class="empty-state">No results found</div>'; return; }
     div.innerHTML = '<div style="margin-bottom:.5rem;font-size:.8rem;color:var(--text-muted);">' + r.length + ' results from mp3juice</div><div class="table-wrap"><table class="table"><thead><tr><th>Title</th><th>Duration</th><th>Actions</th></tr></thead><tbody>' +
@@ -1016,10 +1030,20 @@ async function downloadMusic(btn) {
   btn.disabled = true;
   btn.textContent = "Downloading...";
   try {
-    const result = await apiLocal("/music/playwright-download", {
-      method: "POST",
-      body: JSON.stringify({ videoId: btn.dataset.id, title: btn.dataset.title }),
-    });
+    const result = MODE === "local"
+      ? await apiLocal("/music/playwright-download", {
+          method: "POST",
+          body: JSON.stringify({ videoId: btn.dataset.id, title: btn.dataset.title }),
+        })
+      : await apiWorker("/api/music/download", {
+          method: "POST",
+          body: JSON.stringify({
+            videoId: btn.dataset.id,
+            title: btn.dataset.title,
+            repo: config.repo,
+            branch: config.branch,
+          }),
+        });
     if (result.success) {
       toast("Downloaded and added to playlist!", "success");
       renderPage("music");
