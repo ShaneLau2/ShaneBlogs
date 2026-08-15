@@ -11,7 +11,7 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		// GitHub OAuth App client id (public by design)
-		"GITHUB_CLIENT_ID": "REPLACE_WITH_YOUR_OAUTH_APP_CLIENT_ID",
+		"GITHUB_CLIENT_ID": "Ov23liuzSDwMW4FXgKfB",
 		// GitHub login allowed to manage the blog
 		"ADMIN_LOGIN": "ShaneLau2",
 		// Origin of the blog — the admin SPA lives at <APP_URL>/admin/

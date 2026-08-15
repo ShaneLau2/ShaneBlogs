@@ -2,6 +2,6 @@
   "repo": "ShaneLau2/ShaneBlogs",
   "branch": "master",
   "title": "Shane's Blog Admin",
-  "apiBase": "https://firefly-admin-auth.YOUR-SUBDOMAIN.workers.dev",
+  "apiBase": "https://firefly-admin-auth.shanelau.workers.dev",
   "passwordHash": "02d359422b9f01dde348f2402424f93798e75a944204c535bbe9bfc18e2ab901"
 }
