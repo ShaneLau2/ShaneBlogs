@@ -123,6 +123,7 @@ let config = {};
 let authed = false;
 let adminUser = null;
 let currentPage = "dashboard";
+let editingPlaylistIndex = -1; // index of the playlist row being edited
 
 // ====== App State & Navigation ======
 function navigateTo(page) {
@@ -130,6 +131,7 @@ function navigateTo(page) {
   document.querySelectorAll("[data-page]").forEach(el => el.classList.remove("active"));
   document.querySelector(`[data-page="${page}"]`)?.classList.add("active");
   history.replaceState(null, "", "#" + page);
+  if (page !== "music") editingPlaylistIndex = -1;
   renderPage(page);
 }
 
@@ -858,10 +860,29 @@ async function renderMusic(el, title, desc) {
         <div id="music-search-results" style="margin-top:.75rem;"></div>
       </div>` : ""}
       <div class="card">
-        <div class="card-header"><h3>Playlist (${playlist.length})</h3></div>
+        <div class="card-header"><h3>Playlist (${playlist.length})</h3>
+          <button class="btn btn-primary btn-sm" onclick="togglePlaylistForm()">＋ Add Track</button>
+        </div>
+        <div id="playlist-add-form" style="display:none;margin-bottom:1rem;padding:1rem;background:var(--bg);border-radius:.375rem;">
+          <form id="playlist-add-form-inner" onsubmit="addPlaylistTrack(event)">
+            <div class="form-row">
+              <div class="form-group"><label>Name</label><input name="name" required placeholder="Song title"></div>
+              <div class="form-group"><label>Artist</label><input name="artist" placeholder="Unknown"></div>
+            </div>
+            <div class="form-group"><label>URL</label><input name="url" required placeholder="/assets/music/song.mp3 or https://..."></div>
+            <div class="form-row">
+              <div class="form-group"><label>Cover (optional)</label><input type="file" name="cover" accept=".webp,.png,.jpg,.jpeg,.avif"></div>
+              <div class="form-group"><label>LRC (optional)</label><input name="lrc" placeholder="/assets/music/song.lrc"></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Save Track</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="togglePlaylistForm()">Cancel</button>
+            </div>
+          </form>
+        </div>
         ${playlist.length === 0 ? '<div class="empty-state">Playlist is empty</div>' :
-          '<div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Artist</th><th>File</th></tr></thead><tbody>' +
-          playlist.map(s => '<tr><td>' + escapeHtml(s.name || "") + '</td><td>' + escapeHtml(s.artist || "") + '</td><td style="font-size:.8rem;">' + escapeHtml((s.url || "").split("/").pop()) + '</td></tr>').join("") +
+          '<div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>Cover</th><th>Name</th><th>Artist</th><th>File</th><th>Actions</th></tr></thead><tbody>' +
+          playlist.map((s, i) => renderPlaylistRow(s, i)).join("") +
           '</tbody></table></div>'}
       </div>
       <div class="card">
@@ -922,9 +943,10 @@ async function uploadMusic(e) {
       content: b64,
       branch: config.branch,
     });
+    let coverClean = "";
     if (coverFile) {
       const coverExt = (coverFile.name.match(/\.[^.]+$/)?.[0] || ".png").toLowerCase();
-      const coverClean = safeName + "-cover" + coverExt;
+      coverClean = safeName + "-cover" + coverExt;
       const coverB64 = await readFileAsBase64(coverFile);
       await ghPut("/repos/" + config.repo + "/contents/public/assets/music/cover/" + coverClean, {
         message: "Add cover: " + songName,
@@ -934,7 +956,7 @@ async function uploadMusic(e) {
     }
     // structured playlist update
     const playlist = await readPlaylist();
-    playlist.unshift({ name: songName, artist: "Unknown", url: "/assets/music/" + cleanFile, cover: "", lrc: "" });
+    playlist.unshift({ name: songName, artist: "Unknown", url: "/assets/music/" + cleanFile, cover: coverClean ? "/assets/music/cover/" + coverClean : "", lrc: "" });
     await writePlaylist(playlist);
     toast("Uploaded and added to playlist! Redeploy to publish.", "success");
     renderPage("music");
@@ -1004,6 +1026,156 @@ async function downloadMusic(btn) {
     btn.disabled = false;
     btn.textContent = "Download";
   }
+}
+
+// ====== Playlist editor ======
+function coverSrc(p) {
+  if (!p) return "";
+  if (/^https?:\/\//.test(p)) return p;
+  if (MODE === "local") return p;
+  return "https://raw.githubusercontent.com/" + config.repo + "/" + config.branch + p;
+}
+
+function renderPlaylistRow(s, i) {
+  const thumb = s.cover
+    ? '<img src="' + escapeAttr(coverSrc(s.cover)) + '" style="width:36px;height:36px;object-fit:cover;border-radius:.25rem;">'
+    : '<span style="color:var(--text-muted);font-size:.7rem;">—</span>';
+  if (i === editingPlaylistIndex) {
+    return '<tr data-edit-row>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td>' + thumb + '<input type="file" class="pl-cover-file" accept=".webp,.png,.jpg,.jpeg,.avif" style="display:block;width:100%;font-size:.65rem;margin-top:.25rem;"></td>' +
+      '<td><input class="pl-name" value="' + escapeAttr(s.name || "") + '" style="width:100%;padding:.25rem .5rem;border:1px solid var(--border);border-radius:.25rem;"></td>' +
+      '<td><input class="pl-artist" value="' + escapeAttr(s.artist || "") + '" style="width:100%;padding:.25rem .5rem;border:1px solid var(--border);border-radius:.25rem;"></td>' +
+      '<td><input class="pl-url" value="' + escapeAttr(s.url || "") + '" style="width:100%;padding:.25rem .5rem;border:1px solid var(--border);border-radius:.25rem;font-size:.75rem;"></td>' +
+      '<td class="actions">' +
+        '<button class="btn btn-success btn-sm" data-i="' + i + '" onclick="savePlaylistTrack(this)">Save</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="cancelPlaylistEdit()">Cancel</button>' +
+      '</td></tr>';
+  }
+  return '<tr>' +
+    '<td>' + (i + 1) + '</td>' +
+    '<td>' + thumb + '</td>' +
+    '<td>' + escapeHtml(s.name || "") + '</td>' +
+    '<td>' + escapeHtml(s.artist || "") + '</td>' +
+    '<td style="font-size:.8rem;">' + escapeHtml((s.url || "").split("/").pop()) + '</td>' +
+    '<td class="actions">' +
+      '<button class="btn btn-outline btn-sm" title="Move up" data-i="' + i + '" onclick="movePlaylistTrack(this, -1)">↑</button>' +
+      '<button class="btn btn-outline btn-sm" title="Move down" data-i="' + i + '" onclick="movePlaylistTrack(this, 1)">↓</button>' +
+      '<button class="btn btn-outline btn-sm" title="Edit" data-i="' + i + '" onclick="editPlaylistTrack(this)">✏️</button>' +
+      '<button class="btn btn-danger btn-sm" title="Delete" data-i="' + i + '" onclick="deletePlaylistTrack(this)">🗑️</button>' +
+    '</td></tr>';
+}
+
+function togglePlaylistForm() {
+  const el = document.getElementById("playlist-add-form");
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+async function addPlaylistTrack(e) {
+  e.preventDefault();
+  const form = e.target;
+  const name = form.name.value.trim();
+  const url = form.url.value.trim();
+  if (!name || !url) { toast("Name and URL are required", "error"); return; }
+  const artist = form.artist.value.trim() || "Unknown";
+  const lrc = form.lrc.value.trim() || "";
+  const coverFile = form.cover.files[0];
+  try {
+    let cover = "";
+    if (coverFile) cover = await uploadCoverFile(coverFile, name);
+    const list = await readPlaylist();
+    list.push({ name, artist, url, cover, lrc });
+    await writePlaylist(list);
+    toast("Track added", "success");
+    renderPage("music");
+  } catch (err) {
+    toast("Failed to add track: " + err.message, "error");
+  }
+}
+
+function editPlaylistTrack(btn) {
+  editingPlaylistIndex = Number(btn.dataset.i);
+  renderPage("music");
+}
+
+function cancelPlaylistEdit() {
+  editingPlaylistIndex = -1;
+  renderPage("music");
+}
+
+async function savePlaylistTrack(btn) {
+  const i = Number(btn.dataset.i);
+  const row = document.querySelector("[data-edit-row]");
+  const name = row.querySelector(".pl-name").value.trim();
+  const url = row.querySelector(".pl-url").value.trim();
+  if (!name || !url) { toast("Name and URL are required", "error"); return; }
+  const artist = row.querySelector(".pl-artist").value.trim() || "Unknown";
+  const coverFile = row.querySelector(".pl-cover-file").files[0];
+  try {
+    const list = await readPlaylist();
+    if (!list[i]) throw new Error("Track not found");
+    let cover = list[i].cover || "";
+    if (coverFile) cover = await uploadCoverFile(coverFile, name);
+    list[i] = { ...list[i], name, artist, url, cover };
+    await writePlaylist(list);
+    editingPlaylistIndex = -1;
+    toast("Track updated", "success");
+    renderPage("music");
+  } catch (err) {
+    toast("Failed to update track: " + err.message, "error");
+  }
+}
+
+async function deletePlaylistTrack(btn) {
+  const i = Number(btn.dataset.i);
+  if (!confirm("Remove this track from the playlist?")) return;
+  try {
+    const list = await readPlaylist();
+    if (!list[i]) throw new Error("Track not found");
+    list.splice(i, 1);
+    await writePlaylist(list);
+    toast("Track removed", "success");
+    renderPage("music");
+  } catch (err) {
+    toast("Failed to remove track: " + err.message, "error");
+  }
+}
+
+async function movePlaylistTrack(btn, dir) {
+  const i = Number(btn.dataset.i);
+  const j = i + dir;
+  try {
+    const list = await readPlaylist();
+    if (j < 0 || j >= list.length) return;
+    const tmp = list[i];
+    list[i] = list[j];
+    list[j] = tmp;
+    await writePlaylist(list);
+    renderPage("music");
+  } catch (err) {
+    toast("Failed to reorder: " + err.message, "error");
+  }
+}
+
+async function uploadCoverFile(file, baseName) {
+  if (MODE === "local") {
+    const formData = new FormData();
+    formData.set("cover", file);
+    const res = await fetch("/api/music/upload", { method: "POST", body: formData });
+    const result = await res.json();
+    if (!result.success || !result.cover) throw new Error(result.error || "Cover upload failed");
+    return "/assets/music/cover/" + result.cover;
+  }
+  const ext = (file.name.match(/\.[^.]+$/)?.[0] || ".webp").toLowerCase();
+  const safe = (baseName || "cover").replace(/[^\p{L}\p{N}\s\-()]/gu, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  const cleanName = (safe || "cover") + "-cover" + ext;
+  const b64 = await readFileAsBase64(file);
+  await ghPut("/repos/" + config.repo + "/contents/public/assets/music/cover/" + cleanName, {
+    message: "Add cover: " + baseName,
+    content: b64,
+    branch: config.branch,
+  });
+  return "/assets/music/cover/" + cleanName;
 }
 
 // ====== Deploy ======
@@ -1152,6 +1324,13 @@ Object.assign(window, {
 	searchMusic,
 	downloadMusic,
 	deleteMusicFile,
+	togglePlaylistForm,
+	addPlaylistTrack,
+	editPlaylistTrack,
+	cancelPlaylistEdit,
+	savePlaylistTrack,
+	deletePlaylistTrack,
+	movePlaylistTrack,
 	syncDeploy,
 	logout,
 });
