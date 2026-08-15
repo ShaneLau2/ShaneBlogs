@@ -41,3 +41,8 @@ cache/
 package/
 .obsidian/
 .reasonix/
+
+# local agent/tool state — must never be committed (the admin deploy panel runs `git add .`)
+.freebuff/
+.history/
+.agents/

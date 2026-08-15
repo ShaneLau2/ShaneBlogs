@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listFiles, readFile, writeFile, deleteFile, parseFrontmatter, buildFrontmatter } from "../utils/file-utils.js";
+import { listFiles, readFile, writeFile, deleteFile, parseFrontmatter, buildFrontmatter, isSafeName } from "../utils/file-utils.js";
 
 const router = Router();
 const DYNAMIC_DIR = "src/content/dynamic";
@@ -26,7 +26,9 @@ router.get("/", (req, res) => {
 
 router.get("/:slug", (req, res) => {
 	try {
-		const content = readFile(`${DYNAMIC_DIR}/${req.params.slug}.md`);
+		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
+		const content = readFile(`${DYNAMIC_DIR}/${slug}.md`);
 		const { frontmatter, body } = parseFrontmatter(content);
 		res.json({ slug: req.params.slug, frontmatter, body });
 	} catch (err) {
@@ -37,6 +39,7 @@ router.get("/:slug", (req, res) => {
 router.post("/", (req, res) => {
 	try {
 		const { slug, content, pinned } = req.body;
+		if (slug && !isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		const date = new Date();
 		const fileSlug =
 			slug ||
@@ -55,8 +58,10 @@ router.post("/", (req, res) => {
 
 router.put("/:slug", (req, res) => {
 	try {
+		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		const { content, pinned } = req.body;
-		const existing = readFile(`${DYNAMIC_DIR}/${req.params.slug}.md`);
+		const existing = readFile(`${DYNAMIC_DIR}/${slug}.md`);
 		const { frontmatter } = parseFrontmatter(existing);
 		const fm = { ...frontmatter, pinned: pinned ?? frontmatter.pinned };
 		const mdContent = buildFrontmatter(fm, content || "");
@@ -69,7 +74,9 @@ router.put("/:slug", (req, res) => {
 
 router.delete("/:slug", (req, res) => {
 	try {
-		const deleted = deleteFile(`${DYNAMIC_DIR}/${req.params.slug}.md`);
+		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
+		const deleted = deleteFile(`${DYNAMIC_DIR}/${slug}.md`);
 		if (deleted) {
 			res.json({ success: true });
 		} else {

@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { listFiles, readFile, writeFile, parseFrontmatter, buildFrontmatter } from "../utils/file-utils.js";
+import { listFiles, readFile, writeFile, parseFrontmatter, buildFrontmatter, isSafeName } from "../utils/file-utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
@@ -30,11 +30,13 @@ router.get("/", (req, res) => {
 
 router.get("/:slug", (req, res) => {
 	try {
+		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		let content;
 		try {
-			content = readFile(`${SPEC_DIR}/${req.params.slug}.md`);
+			content = readFile(`${SPEC_DIR}/${slug}.md`);
 		} catch {
-			content = readFile(`${SPEC_DIR}/${req.params.slug}.mdx`);
+			content = readFile(`${SPEC_DIR}/${slug}.mdx`);
 		}
 		const { frontmatter, body } = parseFrontmatter(content);
 		res.json({ slug: req.params.slug, frontmatter, body });
@@ -45,13 +47,15 @@ router.get("/:slug", (req, res) => {
 
 router.put("/:slug", (req, res) => {
 	try {
+		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		const { title, body } = req.body;
 		const specPath = path.join(PROJECT_ROOT, SPEC_DIR);
-		const mdPath = path.join(specPath, `${req.params.slug}.md`);
-		const mdxPath = path.join(specPath, `${req.params.slug}.mdx`);
+		const mdPath = path.join(specPath, `${slug}.md`);
+		const mdxPath = path.join(specPath, `${slug}.mdx`);
 		const ext = fs.existsSync(mdPath) ? ".md" : ".mdx";
 
-		const existing = readFile(`${SPEC_DIR}/${req.params.slug}${ext}`);
+		const existing = readFile(`${SPEC_DIR}/${slug}${ext}`);
 		const { frontmatter } = parseFrontmatter(existing);
 		const fm = { ...frontmatter, title: title || frontmatter.title };
 		const content = buildFrontmatter(fm, body || "");

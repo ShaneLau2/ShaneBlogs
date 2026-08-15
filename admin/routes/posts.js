@@ -1,7 +1,7 @@
 import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
-import { listFiles, readFile, writeFile, deleteFile, parseFrontmatter, buildFrontmatter, getProjectRoot } from "../utils/file-utils.js";
+import { listFiles, readFile, writeFile, deleteFile, parseFrontmatter, buildFrontmatter, getProjectRoot, isSafeName } from "../utils/file-utils.js";
 
 const router = Router();
 const POSTS_DIR = "src/content/posts";
@@ -34,6 +34,7 @@ router.get("/", (req, res) => {
 router.get("/:slug", (req, res) => {
 	try {
 		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		let content;
 		try {
 			content = readFile(`${POSTS_DIR}/${slug}.md`);
@@ -51,7 +52,7 @@ router.get("/:slug", (req, res) => {
 router.post("/", (req, res) => {
 	try {
 		const { slug, frontmatter, body } = req.body;
-		if (!slug) return res.status(400).json({ error: "slug is required" });
+		if (!isSafeName(slug)) return res.status(400).json({ error: "slug is required and must be a safe filename" });
 
 		const fm = {
 			title: frontmatter?.title || slug,
@@ -76,6 +77,7 @@ router.post("/", (req, res) => {
 router.put("/:slug", (req, res) => {
 	try {
 		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		const { frontmatter, body } = req.body;
 		const root = getProjectRoot();
 		const ext = fs.existsSync(path.join(root, POSTS_DIR, `${slug}.md`)) ? ".md" : ".mdx";
@@ -91,6 +93,7 @@ router.put("/:slug", (req, res) => {
 router.delete("/:slug", (req, res) => {
 	try {
 		const { slug } = req.params;
+		if (!isSafeName(slug)) return res.status(400).json({ error: "Invalid slug" });
 		const deleted = deleteFile(`${POSTS_DIR}/${slug}.md`) || deleteFile(`${POSTS_DIR}/${slug}.mdx`);
 		if (deleted) {
 			res.json({ success: true });

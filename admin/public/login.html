@@ -39,7 +39,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     if (data.success) {
-      document.cookie = 'admin_token=' + data.token + '; path=/';
+      // The server sets the HttpOnly admin_token cookie itself
       window.location.href = '/';
     } else {
       document.getElementById('error-msg').style.display = 'block';

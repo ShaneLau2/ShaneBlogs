@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,32 +8,35 @@ const PROJECT_ROOT = path.resolve(__dirname, "../..");
 
 const router = Router();
 
+// execFileSync runs git without a shell, so user input (e.g. commit messages)
+// can never be interpreted as shell commands.
+function git(args) {
+	return execFileSync("git", args, {
+		cwd: PROJECT_ROOT,
+		encoding: "utf-8",
+	});
+}
+
 router.post("/sync", (req, res) => {
 	try {
 		const { message } = req.body;
 		const commitMsg = message || "chore: update blog content via admin panel";
 
 		// Check for uncommitted changes
-		const status = execSync("git status --porcelain", {
-			cwd: PROJECT_ROOT,
-			encoding: "utf-8",
-		}).trim();
+		const status = git(["status", "--porcelain"]).trim();
 
 		if (!status) {
 			return res.json({ success: true, message: "Nothing to commit. Working tree clean." });
 		}
 
 		// Stage all changes
-		execSync("git add .", { cwd: PROJECT_ROOT, encoding: "utf-8" });
+		git(["add", "."]);
 
 		// Commit
-		execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
-			cwd: PROJECT_ROOT,
-			encoding: "utf-8",
-		});
+		git(["commit", "-m", commitMsg]);
 
 		// Push
-		execSync("git push", { cwd: PROJECT_ROOT, encoding: "utf-8" });
+		git(["push"]);
 
 		res.json({
 			success: true,
@@ -41,7 +44,7 @@ router.post("/sync", (req, res) => {
 		});
 	} catch (err) {
 		res.status(500).json({
-			error: `Deploy failed: ${err.message}`,
+			error: `Deploy failed: ${err.stderr || err.message}`,
 			stderr: err.stderr,
 		});
 	}
@@ -50,20 +53,15 @@ router.post("/sync", (req, res) => {
 // Check git status
 router.get("/status", (req, res) => {
 	try {
-		const status = execSync("git status --porcelain", {
-			cwd: PROJECT_ROOT,
-			encoding: "utf-8",
-		}).trim();
+		const status = git(["status", "--porcelain"]).trim();
 
-		const branch = execSync("git rev-parse --abbrev-ref HEAD", {
-			cwd: PROJECT_ROOT,
-			encoding: "utf-8",
-		}).trim();
+		const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
 
-		const lastCommit = execSync('git log -1 --pretty=format:"%h - %s (%ar)"', {
-			cwd: PROJECT_ROOT,
-			encoding: "utf-8",
-		}).trim();
+		const lastCommit = git([
+			"log",
+			"-1",
+			"--pretty=format:%h - %s (%ar)",
+		]).trim();
 
 		const changes = status
 			? status.split("\n").map((line) => ({
@@ -74,7 +72,7 @@ router.get("/status", (req, res) => {
 
 		res.json({ branch, lastCommit, changes, hasChanges: changes.length > 0 });
 	} catch (err) {
-		res.status(500).json({ error: err.message });
+		res.status(500).json({ error: err.stderr || err.message });
 	}
 });
 
