@@ -22,7 +22,20 @@ pnpm admin                # 启动（默认监听 http://localhost:3000，仅绑
 ADMIN_PASSWORD_HASH=<sha256> pnpm admin  # 用自定义密码哈希启动
 ```
 
-**首次使用请设置自己的密码**：运行 `pnpm admin:set-pwd 你的密码`，把输出的 SHA-256 哈希填入 `public/admin/config.json` 的 `passwordHash`（或设置 `ADMIN_PASSWORD_HASH` 环境变量）。服务器没有配置密码哈希时会直接报错退出，不会回退到任何硬编码默认值。
+**首次使用请设置自己的密码**（二选一，推荐方式 1）：
+
+1. **写入配置文件（推荐，长期生效）**
+   ```bash
+   pnpm admin:set-pwd 你的密码
+   # 把输出的 SHA-256 哈希填入 public/admin/config.json 的 passwordHash
+   pnpm admin
+   ```
+2. **环境变量（仅当前会话生效）**
+   ```bash
+   ADMIN_PASSWORD_HASH=<sha256> pnpm admin
+   ```
+
+> 服务器没有配置密码哈希时会直接报错退出，不会回退到任何硬编码默认值。用浏览器打开 `http://localhost:3000`，输入密码登录即可；登录成功会设置 `HttpOnly` cookie（登录接口带限流，错误 5 次/10 分钟会被临时封禁）。
 
 | 页面 | 功能 |
 |------|------|
@@ -32,7 +45,7 @@ ADMIN_PASSWORD_HASH=<sha256> pnpm admin  # 用自定义密码哈希启动
 | 📋 Pages | 编辑 about / friends / guestbook 页面 |
 | 📢 Announcement | 编辑公告标题、内容、链接 |
 | ⚙️ Config | 直接编辑任意 TypeScript 配置文件 |
-| 🎵 Music | 上传 MP3 + mp3juice 搜索下载 + 自动加入播放列表 |
+| 🎵 Music | 上传 MP3 + mp3juice 搜索下载 + 播放列表编辑器（增删改、拖拽/键盘排序、封面上传） |
 | 🚀 Deploy | 一键 git commit & push，触发 GitHub Pages 自动部署 |
 
 ### 🌐 在线 Admin Panel
