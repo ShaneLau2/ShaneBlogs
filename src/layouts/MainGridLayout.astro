@@ -414,21 +414,7 @@ const hasMultipleImages =
             var switchable = container.dataset.carouselSwitchable === 'true';
             var defaultEnabled = container.dataset.carouselEnabled === 'true';
             var effect = container.dataset.carouselEffect || 'fade';
-            var FADE_MS = 800;
             var transitioning = false;
-
-            // 创建过渡遮罩（用于效果切换时的桥接）
-            var overlay = null;
-
-            // 从 slide-item 中提取 LQIP 渐变样式
-            function getSlideLqipStyle(slide) {
-                var ph = slide.querySelector('.lqip-placeholder');
-                if (ph) {
-                    var bg = ph.style.background || ph.style.backgroundImage;
-                    if (bg) return bg;
-                }
-                return '#000';
-            }
 
             function isCarouselEnabled() {
                 if (!switchable) return defaultEnabled;
