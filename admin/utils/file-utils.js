@@ -30,6 +30,21 @@ export function deleteFile(filePath) {
 	return false;
 }
 
+// Guards against path traversal: rejects separators, "..", leading dots and
+// control characters. Used for slugs/names that end up in file paths.
+export function isSafeName(name) {
+	return (
+		typeof name === "string" &&
+		name.length > 0 &&
+		name.length <= 200 &&
+		!name.includes("/") &&
+		!name.includes("\\") &&
+		!name.includes("..") &&
+		!name.startsWith(".") &&
+		!/[\u0000-\u001f]/.test(name)
+	);
+}
+
 export function listFiles(dirPath, extension = null) {
 	const fullPath = path.join(PROJECT_ROOT, dirPath);
 	if (!fs.existsSync(fullPath)) return [];
@@ -40,55 +55,19 @@ export function listFiles(dirPath, extension = null) {
 	return files.sort().reverse();
 }
 
+// Frontmatter parsing/serialization lives in the shared module so the admin
+// SPA, the Express server and the Astro API route all use one implementation.
+import {
+	parseFrontmatter as parseSharedFrontmatter,
+	buildFrontmatter as buildSharedFrontmatter,
+} from "../web/frontmatter.js";
+
+// Kept as a thin wrapper so route code still receives { frontmatter, body }.
 export function parseFrontmatter(content) {
-	const match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-	if (!match) return { frontmatter: {}, body: content };
-
-	const frontmatter = {};
-	for (const line of match[1].split("\n")) {
-		const colonIndex = line.indexOf(":");
-		if (colonIndex === -1) continue;
-		const key = line.slice(0, colonIndex).trim();
-		let value = line.slice(colonIndex + 1).trim();
-
-		// Parse basic YAML-like values
-		if (value === "true") value = true;
-		else if (value === "false") value = false;
-		else if (/^\d+$/.test(value)) value = Number.parseInt(value, 10);
-		else if (
-			value.startsWith('"') &&
-			value.endsWith('"')
-		)
-			value = value.slice(1, -1);
-		else if (
-			value.startsWith("[") &&
-			value.endsWith("]")
-		) {
-			value = value
-				.slice(1, -1)
-				.split(",")
-				.map((v) => v.trim().replace(/^["']|["']$/g, ""))
-				.filter(Boolean);
-		}
-
-		frontmatter[key] = value;
-	}
-
-	return { frontmatter, body: match[2].trim() };
+	const { data, body } = parseSharedFrontmatter(content);
+	return { frontmatter: data, body };
 }
 
 export function buildFrontmatter(frontmatter, body) {
-	const lines = Object.entries(frontmatter)
-		.map(([key, value]) => {
-			if (Array.isArray(value)) {
-				if (value.length === 0) return `${key}: []`;
-				return `${key}: [${value.map((v) => `"${v}"`).join(", ")}]`;
-			}
-			if (typeof value === "string" && /[:\s\[\]]/.test(value))
-				return `${key}: "${value}"`;
-			return `${key}: ${value}`;
-		})
-		.join("\n");
-
-	return `---\n${lines}\n---\n\n${body}`;
+	return buildSharedFrontmatter(frontmatter, body);
 }

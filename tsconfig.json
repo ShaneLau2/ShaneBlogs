@@ -8,7 +8,6 @@
     "jsxImportSource": "react",
     "strictNullChecks": true,
     "allowJs": false,
-    "declaration": true,
     "noUncheckedSideEffectImports": false,
     "plugins": [
       {

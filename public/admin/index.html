@@ -5,31 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Firefly Admin</title>
 <style>
-:root{--primary:#0891b2;--primary-hover:#0e7490;--bg:#f1f5f9;--sidebar-bg:#1e293b;--sidebar-text:#94a3b8;--sidebar-active:#0891b2;--card-bg:#ffffff;--text:#1e293b;--text-muted:#64748b;--border:#e2e8f0;--danger:#ef4444;--success:#22c55e;--radius:0.5rem;--shadow:0 1px 3px rgba(0,0,0,0.08)}
+:root{--primary:#0891b2;--primary-hover:#0e7490;--bg:#f1f5f9;--sidebar-bg:#1e293b;--sidebar-text:#94a3b8;--sidebar-active:#0891b2;--card-bg:#fff;--text:#1e293b;--text-muted:#64748b;--border:#e2e8f0;--danger:#ef4444;--success:#22c55e;--warning:#f59e0b}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
-.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);position:fixed;top:0;left:0;height:100vh;z-index:100;display:none;flex-direction:column}
-.sidebar.open{display:flex}
-.sidebar-header{padding:1.25rem;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.sidebar-header{padding:1.25rem;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}
 .sidebar-header h1{color:#fff;font-size:1.1rem;font-weight:600}
 .sidebar-header p{font-size:.75rem;margin-top:.25rem}
-.nav-wrap{flex:1;overflow-y:auto;padding:.5rem 0}
-.nav-wrap a{display:flex;align-items:center;gap:.75rem;padding:.625rem 1.25rem;color:var(--sidebar-text);text-decoration:none;font-size:.875rem;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
-.nav-wrap a:hover,.nav-wrap a.active{background:rgba(255,255,255,0.08);color:#fff}
-.nav-wrap a.active{border-right:3px solid var(--sidebar-active)}
-.nav-wrap .icon{width:1.25rem;text-align:center;font-size:1.1rem}
-.sidebar-footer{padding:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:.75rem;color:var(--text-muted);flex-shrink:0}
-.main{margin-left:0;flex:1;padding:1.5rem;max-width:100%}
-.sidebar.open + .main{margin-left:240px;max-width:calc(100vw - 240px)}
-.main.no-sidebar{max-width:100%}
+.sidebar-nav{flex:1;overflow-y:auto;padding:.5rem 0}
+.sidebar-nav a{display:flex;align-items:center;gap:.75rem;padding:.625rem 1.25rem;color:var(--sidebar-text);text-decoration:none;font-size:.875rem;transition:all .15s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+.sidebar-nav a:hover,.sidebar-nav a.active{background:rgba(255,255,255,.08);color:#fff}
+.sidebar-nav a.active{border-right:3px solid var(--sidebar-active)}
+.sidebar-nav .icon{width:1.25rem;text-align:center;font-size:1.1rem}
+.sidebar-footer{padding:.75rem 1.25rem;border-top:1px solid rgba(255,255,255,.1);font-size:.75rem;color:var(--text-muted);flex-shrink:0}
+.sidebar-footer a{color:#94a3b8}
+.main{margin-left:240px;flex:1;padding:1.5rem;max-width:calc(100vw - 240px)}
 .page-header{margin-bottom:1.5rem}
 .page-header h2{font-size:1.5rem;font-weight:600}
 .page-header p{color:var(--text-muted);font-size:.875rem;margin-top:.25rem}
-.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem;margin-bottom:1rem}
+.card{background:var(--card-bg);border-radius:.5rem;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:1.25rem;margin-bottom:1rem}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
 .card-header h3{font-size:1rem;font-weight:600}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
-.stat-card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--card-bg);border-radius:.5rem;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:1.25rem}
 .stat-card .value{font-size:1.75rem;font-weight:700;color:var(--primary)}
 .stat-card .label{font-size:.8rem;color:var(--text-muted);margin-top:.25rem}
 .btn{display:inline-flex;align-items:center;gap:.375rem;padding:.5rem 1rem;border-radius:.375rem;font-size:.875rem;font-weight:500;border:none;cursor:pointer;transition:all .15s;text-decoration:none}
@@ -46,7 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .form-group{margin-bottom:1rem}
 .form-group label{display:block;font-size:.875rem;font-weight:500;margin-bottom:.375rem}
 .form-group input,.form-group textarea,.form-group select{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:.375rem;font-size:.875rem;font-family:inherit;background:#fff}
-.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(8,145,178,0.15)}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(8,145,178,.15)}
 .form-group textarea{min-height:100px;line-height:1.5}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .form-actions{display:flex;gap:.5rem;margin-top:1rem}
@@ -54,268 +52,150 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .table th,.table td{text-align:left;padding:.625rem .75rem;border-bottom:1px solid var(--border)}
 .table th{font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
 .table tr:hover td{background:#f8fafc}
-.actions{display:flex;gap:.375rem}
+.table .actions{display:flex;gap:.375rem}
 .tag{display:inline-block;padding:.125rem .5rem;border-radius:999px;font-size:.75rem;font-weight:500;background:#e0f2fe;color:#0369a1;margin:.125rem}
 .badge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;border-radius:999px;font-size:.7rem;font-weight:500}
 .badge-success{background:#dcfce7;color:#166534}
 .badge-warning{background:#fef3c7;color:#92400e}
 .badge-info{background:#e0f2fe;color:#0369a1}
 .toast-container{position:fixed;top:1rem;right:1rem;z-index:999}
-.toast{padding:.75rem 1rem;border-radius:.375rem;margin-bottom:.5rem;font-size:.875rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn .2s ease}
+.toast{padding:.75rem 1rem;border-radius:.375rem;margin-bottom:.5rem;font-size:.875rem;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .2s ease}
 .toast-success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
 .toast-error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.toast-info{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 .loading{text-align:center;padding:2rem;color:var(--text-muted)}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text-muted)}
 .empty-state .icon{font-size:2.5rem;margin-bottom:.75rem}
 .table-wrap{overflow-x:auto}
 .markdown-hint{font-size:.75rem;color:var(--text-muted);margin-top:.25rem}
-.hamburger{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;padding:.25rem;margin-bottom:.5rem;color:var(--text)}
+.progress-bar{width:100%;height:.5rem;background:var(--border);border-radius:999px;overflow:hidden;margin:1rem 0}
+.progress-bar .fill{height:100%;background:var(--primary);border-radius:999px;transition:width .3s}
 @media(max-width:768px){
 .sidebar{width:56px}
-.sidebar-header h1,.sidebar-header p,.nav-wrap a span,.sidebar-footer{display:none}
-.nav-wrap a{justify-content:center;padding:.75rem}
-.nav-wrap .icon{margin:0}
-.main{margin-left:0;max-width:100%;padding:1rem}
+.sidebar-header h1,.sidebar-header p,.sidebar-nav a span,.sidebar-footer{display:none}
+.sidebar-nav a{justify-content:center;padding:.75rem}
+.sidebar-nav .icon{margin:0}
+.main{margin-left:56px;max-width:calc(100vw - 56px)}
 .form-row{grid-template-columns:1fr}
 .stats-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
 <body>
-<div class="sidebar" id="sidebar">
+<div class="sidebar">
   <div class="sidebar-header">
     <h1>📝 Firefly</h1>
-    <p>Blog Admin</p>
+    <p>Admin Panel</p>
   </div>
-  <nav class="nav-wrap">
-    <a href="#" data-page="dashboard" class="active"><span class="icon">📊</span><span>Dashboard</span></a>
-    <a href="#" data-page="posts"><span class="icon">📄</span><span>Posts</span></a>
-    <a href="#" data-page="dynamics"><span class="icon">💬</span><span>Dynamics</span></a>
-    <a href="#" data-page="spec"><span class="icon">📋</span><span>Pages</span></a>
-    <a href="#" data-page="config"><span class="icon">⚙️</span><span>Config</span></a>
-    <a href="#" data-page="announcement"><span class="icon">📢</span><span>Announcement</span></a>
-    <a href="#" data-page="music"><span class="icon">🎵</span><span>Music</span></a>
-    <a href="#" data-page="deploy"><span class="icon">🚀</span><span>Deploy</span></a>
+  <nav class="sidebar-nav" id="nav">
+    <a href="#dashboard" class="active" data-page="dashboard"><span class="icon">📊</span><span>Dashboard</span></a>
+    <a href="#posts" data-page="posts"><span class="icon">📄</span><span>Posts</span></a>
+    <a href="#dynamics" data-page="dynamics"><span class="icon">💬</span><span>Dynamics</span></a>
+    <a href="#spec" data-page="spec"><span class="icon">📋</span><span>Pages</span></a>
+    <a href="#config" data-page="config"><span class="icon">⚙️</span><span>Config</span></a>
+    <a href="#announcement" data-page="announcement"><span class="icon">📢</span><span>Announcement</span></a>
+    <a href="#music" data-page="music"><span class="icon">🎵</span><span>Music</span></a>
+    <a href="#deploy" data-page="deploy"><span class="icon">🚀</span><span>Deploy</span></a>
   </nav>
   <div class="sidebar-footer" id="login-status"></div>
 </div>
 
-<div class="main" id="main">
-  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+<div class="main" id="main-content">
   <div class="page-header">
-    <h2 id="page-title">Login</h2>
-    <p id="page-desc">Enter your password and GitHub token</p>
+    <h2 id="page-title">Dashboard</h2>
+    <p id="page-desc">Overview of your blog</p>
   </div>
   <div id="page-content"></div>
 </div>
 
 <div class="toast-container" id="toast-container"></div>
 
-<script>
-// ====== Config ======
-const GITHUB_API = "https://api.github.com";
+<script type="module">
+import { parseFrontmatter, buildFrontmatter } from "./frontmatter.js";
+// ====== Mode detection ======
+//  - online:  served from GitHub Pages, config.json has an apiBase pointing at
+//             the Cloudflare Worker (GitHub OAuth + /api/gh proxy)
+//  - local:   served by the Express admin server (no config.json)
+let MODE = "local";
+let API_BASE = "";
 let config = {};
-let ghToken = localStorage.getItem("gh_token") || "";
-let authed = sessionStorage.getItem("admin_authed") === "true";
+let authed = false;
+let adminUser = null;
 let currentPage = "dashboard";
 
-// ====== Init ======
-(async function init() {
-  try {
-    const res = await fetch("config.json");
-    config = await res.json();
-    document.title = config.title;
-    // Auto-open sidebar on desktop
-    if (window.innerWidth >= 768) {
-      document.getElementById("sidebar").classList.add("open");
-    } else {
-      document.getElementById("main").classList.add("no-sidebar");
-    }
-  } catch (e) {
-    document.getElementById("page-content").innerHTML = '<div class="empty-state">Failed to load config.json</div>';
-    return;
-  }
-  renderApp();
-})();
-
-function renderApp() {
-  if (!authed) {
-    renderLogin();
-    return;
-  }
-  document.getElementById("login-status").textContent = "✅ Authenticated";
-  setupNav();
-  navigateTo(currentPage);
-}
-
-// ====== Toggle ======
-function toggleSidebar() {
-  document.getElementById("sidebar").classList.toggle("open");
-  document.getElementById("main").classList.toggle("no-sidebar");
-}
-
-// ====== Toast ======
-function toast(msg, type) {
-  const el = document.createElement("div");
-  el.className = "toast toast-" + type;
-  el.textContent = msg;
-  document.getElementById("toast-container").appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-// ====== Login ======
-function renderLogin() {
-  const el = document.getElementById("page-content");
-  document.getElementById("page-title").textContent = "🔐 Login";
-  document.getElementById("page-desc").textContent = "";
-  el.innerHTML = `
-    <div style="max-width:400px;margin:2rem auto;">
-      <div class="card">
-        <div class="card-header"><h3>Admin Login</h3></div>
-        <form onsubmit="doLogin(event)">
-          <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="login-pwd" placeholder="Admin password" autofocus>
-          </div>
-          <div class="form-group">
-            <label>GitHub Personal Access Token</label>
-            <input type="password" id="login-token" placeholder="ghp_..." value="${ghToken}">
-            <div class="markdown-hint">Needs repo scope. <a href="https://github.com/settings/tokens" target="_blank">Create one →</a></div>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
-          <div id="login-error" style="color:#ef4444;font-size:.8rem;margin-top:.5rem;display:none"></div>
-        </form>
-      </div>
-    </div>
-  `;
-}
-
-async function doLogin(e) {
-  e.preventDefault();
-  const pwd = document.getElementById("login-pwd").value;
-  const token = document.getElementById("login-token").value.trim();
-  const errEl = document.getElementById("login-error");
-
-  // Hash password and compare
-  const hash = await sha256(pwd);
-  if (hash !== config.passwordHash) {
-    errEl.textContent = "Wrong password";
-    errEl.style.display = "block";
-    return;
-  }
-
-  // Test GitHub token
-  if (token) {
-    try {
-      const res = await fetch(GITHUB_API + "/repos/" + config.repo, {
-        headers: { "Authorization": "token " + token }
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-    } catch (err) {
-      errEl.textContent = "GitHub token invalid or lacks permissions: " + err.message;
-      errEl.style.display = "block";
-      return;
-    }
-    localStorage.setItem("gh_token", token);
-    ghToken = token;
-  } else if (!ghToken) {
-    errEl.textContent = "GitHub token is required";
-    errEl.style.display = "block";
-    return;
-  }
-
-  sessionStorage.setItem("admin_authed", "true");
-  authed = true;
-  renderApp();
-}
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
-}
-
-// ====== Navigation ======
-function setupNav() {
-  document.querySelectorAll("[data-page]").forEach(a => {
-    a.onclick = (e) => {
-      e.preventDefault();
-      navigateTo(a.dataset.page);
-    };
-  });
-}
-
+// ====== App State & Navigation ======
 function navigateTo(page) {
   currentPage = page;
-  document.querySelectorAll("[data-page]").forEach(a => a.classList.remove("active"));
-  const activeLink = document.querySelector("[data-page='" + page + "']");
-  if (activeLink) activeLink.classList.add("active");
-
-  const content = document.getElementById("page-content");
-  const title = document.getElementById("page-title");
-  const desc = document.getElementById("page-desc");
-  content.innerHTML = '<div class="loading">Loading</div>';
-
-  switch(page) {
-    case "dashboard": renderDashboard(content, title, desc); break;
-    case "posts": renderPosts(content, title, desc); break;
-    case "dynamics": renderDynamics(content, title, desc); break;
-    case "spec": renderSpec(content, title, desc); break;
-    case "config": renderConfig(content, title, desc); break;
-    case "announcement": renderAnnouncement(content, title, desc); break;
-    case "music": renderMusic(content, title, desc); break;
-    case "deploy": renderDeploy(content, title, desc); break;
-  }
+  document.querySelectorAll("[data-page]").forEach(el => el.classList.remove("active"));
+  document.querySelector(`[data-page="${page}"]`)?.classList.add("active");
+  history.replaceState(null, "", "#" + page);
+  renderPage(page);
 }
 
-// ====== GitHub API Helpers ======
-async function gh(path, options) {
-  const res = await fetch(GITHUB_API + path, {
-    headers: {
-      "Authorization": "token " + ghToken,
-      "Accept": "application/vnd.github.v3+json",
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
-    },
+window.addEventListener("hashchange", () => {
+  const page = location.hash.slice(1) || "dashboard";
+  if (page !== currentPage) navigateTo(page);
+});
+
+// ====== Toast ======
+function toast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  const el = document.createElement("div");
+  el.className = "toast toast-" + type;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// ====== Low-level HTTP ======
+async function apiLocal(path, options = {}) {
+  const res = await fetch("/api" + path, {
+    headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || ("HTTP " + res.status));
+  if (res.status === 401) {
+    window.location.href = "/login.html";
+    throw new Error("Unauthorized");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }
 
-async function ghGet(path) { return gh(path); }
-
-async function ghPut(path, body) {
-  return gh(path, { method: "PUT", body: JSON.stringify(body) });
+async function apiGh(path, options = {}) {
+  const res = await fetch(API_BASE + "/api/gh" + path, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/vnd.github.v3+json",
+      ...options.headers,
+    },
+    ...options,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
 }
 
-async function ghDelete(path, options) {
-  return gh(path, { method: "DELETE", ...options });
-}
+async function ghGet(path) { return apiGh(path); }
+async function ghPut(path, body) { return apiGh(path, { method: "PUT", body: JSON.stringify(body) }); }
+async function ghDelete(path, options) { return apiGh(path, { method: "DELETE", ...options }); }
 
-async function readFile(repoPath) {
+async function ghReadFile(repoPath) {
   try {
     const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
-    // Decode base64 content — handle both ASCII and UTF-8
     const raw = atob(data.content.replace(/\n/g, ""));
     let content;
-    try {
-      content = decodeURIComponent(escape(raw));
-    } catch {
-      content = raw;
-    }
+    try { content = decodeURIComponent(escape(raw)); } catch { content = raw; }
     return { content, sha: data.sha };
-  } catch (err) {
-    return { content: "", sha: null };
-  }
+  } catch { return { content: "", sha: null }; }
 }
 
-async function writeFile(repoPath, content, message) {
-  const existing = await readFile(repoPath);
-  // Properly encode UTF-8 content to base64
-  const utf8Bytes = unescape(encodeURIComponent(content));
-  const b64 = btoa(utf8Bytes);
+async function ghWriteFile(repoPath, content, message) {
+  const existing = await ghReadFile(repoPath);
+  const utf8 = unescape(encodeURIComponent(content));
+  const b64 = btoa(utf8);
   return ghPut("/repos/" + config.repo + "/contents/" + repoPath, {
     message: message || "chore: update via admin panel",
     content: b64,
@@ -324,146 +204,392 @@ async function writeFile(repoPath, content, message) {
   });
 }
 
-async function deleteFile(repoPath, message) {
-  const existing = await readFile(repoPath);
+async function ghDeleteFile(repoPath, message) {
+  const existing = await ghReadFile(repoPath);
   if (!existing.sha) return false;
   await ghDelete("/repos/" + config.repo + "/contents/" + repoPath, {
-    body: JSON.stringify({
-      message: message || "chore: delete via admin panel",
-      sha: existing.sha,
-      branch: config.branch,
-    })
+    body: JSON.stringify({ message: message || "chore: delete via admin panel", sha: existing.sha, branch: config.branch }),
   });
   return true;
 }
 
-async function listFiles(repoPath) {
+async function ghListFiles(repoPath) {
   try {
     const data = await ghGet("/repos/" + config.repo + "/contents/" + repoPath + "?ref=" + config.branch);
     if (!Array.isArray(data)) return [];
     return data.filter(f => f.type === "file" && f.name !== ".gitkeep").map(f => f.name);
-  } catch {
-    return [];
+  } catch { return []; }
+}
+
+// ====== Unified data layer (mode-aware) ======
+async function listPosts() {
+  if (MODE === "local") {
+    const { posts } = await apiLocal("/posts");
+    return posts;
+  }
+  const files = await ghListFiles("src/content/posts");
+  const posts = [];
+  for (const f of files) {
+    if (!/\.(md|mdx)$/.test(f)) continue;
+    const { content } = await ghReadFile("src/content/posts/" + f);
+    const { data } = parseFrontmatter(content);
+    posts.push({ slug: f.replace(/\.(md|mdx)$/, ""), file: f, title: data.title || f, published: data.published || "", tags: data.tags || [], category: data.category || "", draft: !!data.draft, pinned: !!data.pinned });
+  }
+  return posts;
+}
+
+async function getPost(slug) {
+  if (MODE === "local") return await apiLocal("/posts/" + encodeURIComponent(slug));
+  let content = "";
+  let md = await ghReadFile(`src/content/posts/${slug}.md`);
+  let ext = ".md";
+  if (!md.content) { md = await ghReadFile(`src/content/posts/${slug}.mdx`); ext = ".mdx"; }
+  if (!md.content) throw new Error("Post not found");
+  content = md.content;
+  const { data, body } = parseFrontmatter(content);
+  return { slug, frontmatter: data, body, ext };
+}
+
+async function savePostData(slug, frontmatter, body, isNew) {
+  if (MODE === "local") {
+    if (isNew) return await apiLocal("/posts", { method: "POST", body: JSON.stringify({ slug, frontmatter, body }) });
+    return await apiLocal("/posts/" + encodeURIComponent(slug), { method: "PUT", body: JSON.stringify({ frontmatter, body }) });
+  }
+  const content = buildFrontmatter(frontmatter, body);
+  await ghWriteFile(`src/content/posts/${slug}.md`, content, (isNew ? "Create" : "Update") + " post: " + (frontmatter.title || slug));
+}
+
+async function deletePostData(slug) {
+  if (MODE === "local") return await apiLocal("/posts/" + encodeURIComponent(slug), { method: "DELETE" });
+  const ok = await ghDeleteFile(`src/content/posts/${slug}.md`) || await ghDeleteFile(`src/content/posts/${slug}.mdx`);
+  if (!ok) throw new Error("Post not found on GitHub");
+}
+
+async function listDynamics() {
+  if (MODE === "local") {
+    const { dynamics } = await apiLocal("/dynamics");
+    return dynamics;
+  }
+  const files = await ghListFiles("src/content/dynamic");
+  const out = [];
+  for (const f of files) {
+    if (!f.endsWith(".md")) continue;
+    const { content } = await ghReadFile("src/content/dynamic/" + f);
+    const { data } = parseFrontmatter(content);
+    out.push({ slug: f.replace(/\.md$/, ""), file: f, published: data.published || "", pinned: !!data.pinned });
+  }
+  return out;
+}
+
+async function getDynamic(slug) {
+  if (MODE === "local") return await apiLocal("/dynamics/" + encodeURIComponent(slug));
+  const { content } = await ghReadFile(`src/content/dynamic/${slug}.md`);
+  if (!content) throw new Error("Dynamic not found");
+  const { data, body } = parseFrontmatter(content);
+  return { slug, frontmatter: data, body };
+}
+
+async function saveDynamicData(slug, content, pinned, isNew) {
+  if (MODE === "local") {
+    if (isNew) return await apiLocal("/dynamics", { method: "POST", body: JSON.stringify({ content, pinned }) });
+    return await apiLocal("/dynamics/" + encodeURIComponent(slug), { method: "PUT", body: JSON.stringify({ content, pinned }) });
+  }
+  const data = isNew
+    ? { published: new Date().toISOString(), pinned: !!pinned }
+    : (await getDynamic(slug)).frontmatter;
+  if (!isNew) data.pinned = !!pinned;
+  const fileContent = buildFrontmatter(data, content);
+  await ghWriteFile(`src/content/dynamic/${isNew ? makeDynamicSlug() : slug}.md`, fileContent, isNew ? "New dynamic" : "Update dynamic");
+}
+
+function makeDynamicSlug() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+}
+
+async function deleteDynamicData(slug) {
+  if (MODE === "local") return await apiLocal("/dynamics/" + encodeURIComponent(slug), { method: "DELETE" });
+  const ok = await ghDeleteFile(`src/content/dynamic/${slug}.md`);
+  if (!ok) throw new Error("Dynamic not found on GitHub");
+}
+
+async function listSpec() {
+  if (MODE === "local") {
+    const { pages } = await apiLocal("/spec");
+    return pages;
+  }
+  const files = await ghListFiles("src/content/spec");
+  const out = [];
+  for (const f of files) {
+    if (!/\.(md|mdx)$/.test(f)) continue;
+    const { content } = await ghReadFile("src/content/spec/" + f);
+    const { data } = parseFrontmatter(content);
+    out.push({ slug: f.replace(/\.(md|mdx)$/, ""), file: f, title: data.title || f });
+  }
+  return out;
+}
+
+async function getSpec(slug) {
+  if (MODE === "local") return await apiLocal("/spec/" + encodeURIComponent(slug));
+  let content = "";
+  let md = await ghReadFile(`src/content/spec/${slug}.md`);
+  if (!md.content) { md = await ghReadFile(`src/content/spec/${slug}.mdx`); }
+  content = md.content;
+  if (!content) throw new Error("Page not found");
+  const { data, body } = parseFrontmatter(content);
+  return { slug, frontmatter: data, body };
+}
+
+async function saveSpec(slug, title, body) {
+  if (MODE === "local") return await apiLocal("/spec/" + encodeURIComponent(slug), { method: "PUT", body: JSON.stringify({ title, body }) });
+  const existing = await getSpec(slug);
+  const data = { ...existing.frontmatter, title: title || existing.frontmatter.title };
+  await ghWriteFile(`src/content/spec/${slug}.md`, buildFrontmatter(data, body), "Update " + slug);
+}
+
+const CONFIG_NAME_PATTERN = /^[A-Za-z0-9_-]+\.(ts|html|md)$/;
+
+async function readConfigFile(name) {
+  if (MODE === "local") {
+    const { content } = await apiLocal("/config/" + name);
+    return content;
+  }
+  const { content } = await ghReadFile("src/config/" + name);
+  if (!content) throw new Error("Config not found");
+  return content;
+}
+
+async function writeConfigFile(name, content) {
+  if (MODE === "local") return await apiLocal("/config/" + name, { method: "PUT", body: JSON.stringify({ content }) });
+  await ghWriteFile("src/config/" + name, content, "Update " + name);
+}
+
+async function readPlaylist() {
+  if (MODE === "local") {
+    const res = await fetch("/api/data/music-playlist.json");
+    if (!res.ok) return [];
+    return res.json().catch(() => []);
+  }
+  const { content } = await ghReadFile("src/data/music-playlist.json");
+  if (!content) return [];
+  try { return JSON.parse(content); } catch { return []; }
+}
+
+async function writePlaylist(list) {
+  const content = JSON.stringify(list, null, "\t") + "\n";
+  if (MODE === "local") {
+    return await apiLocal("/data/music-playlist.json", { method: "PUT", body: JSON.stringify({ content }) });
+  }
+  await ghWriteFile("src/data/music-playlist.json", content, "Update music playlist");
+}
+
+async function deployStatus() {
+  if (MODE === "local") return await apiLocal("/deploy/status");
+  const ref = await ghGet("/repos/" + config.repo + "/git/ref/heads/" + config.branch);
+  const commit = await ghGet("/repos/" + config.repo + "/git/commits/" + ref.object.sha);
+  return { branch: config.branch, lastCommit: commit.message.split("\n")[0], hasChanges: false, changes: [], repo: config.repo };
+}
+
+async function doDeploy(message) {
+  if (MODE === "local") {
+    const result = await apiLocal("/deploy/sync", { method: "POST", body: JSON.stringify({ message }) });
+    return { message: result.message, via: "git" };
+  }
+  await apiGh("/repos/" + config.repo + "/actions/workflows/deploy.yml/dispatches", { method: "POST", body: JSON.stringify({ ref: config.branch }) });
+  return { message: "Deploy triggered! GitHub Actions will build and deploy.", via: "actions" };
+}
+
+// ====== Page renderer ======
+async function renderPage(page) {
+  const content = document.getElementById("page-content");
+  const title = document.getElementById("page-title");
+  const desc = document.getElementById("page-desc");
+  content.innerHTML = '<div class="loading">Loading</div>';
+
+  switch (page) {
+    case "dashboard": renderDashboard(content, title, desc); break;
+    case "posts": renderPosts(content, title, desc); break;
+    case "dynamics": renderDynamics(content, title, desc); break;
+    case "spec": renderSpec(content, title, desc); break;
+    case "config": renderConfig(content, title, desc); break;
+    case "announcement": renderAnnouncement(content, title, desc); break;
+    case "music": renderMusic(content, title, desc); break;
+    case "deploy": renderDeploy(content, title, desc); break;
+    default: renderDashboard(content, title, desc);
   }
 }
 
 // ====== Dashboard ======
 async function renderDashboard(el, title, desc) {
   title.textContent = "📊 Dashboard";
-  desc.textContent = "Manage your blog via GitHub API";
+  desc.textContent = "Blog overview at a glance";
   try {
-    const repo = await ghGet("/repos/" + config.repo);
-    const posts = await listFiles("src/content/posts");
-    const dynamics = await listFiles("src/content/dynamic");
+    const [posts, dynamics] = await Promise.all([listPosts().catch(() => []), listDynamics().catch(() => [])]);
+    const publishedCount = posts.filter(p => !p.draft).length;
+    const draftCount = posts.length - publishedCount;
+
+    let extra = "";
+    if (MODE === "local") {
+      const deployStatusData = await deployStatus().catch(() => ({}));
+      extra = `<div class="card">
+        <div class="card-header"><h3>Git Status</h3></div>
+        <p style="font-size:.875rem;margin-bottom:.5rem;"><strong>Branch:</strong> ${escapeHtml(deployStatusData.branch || "-")}</p>
+        <p style="font-size:.875rem;margin-bottom:.5rem;"><strong>Last Commit:</strong> ${escapeHtml(deployStatusData.lastCommit || "-")}</p>
+        <p style="font-size:.875rem;"><strong>Changes:</strong> ${deployStatusData.hasChanges ? deployStatusData.changes.length + " file(s) pending" : "Clean"}</p>
+      </div>`;
+    } else {
+      extra = `<div class="card">
+        <div class="card-header"><h3>Repository</h3></div>
+        <p style="font-size:.875rem;margin-bottom:.5rem;"><strong>${escapeHtml(config.repo)}</strong> (${escapeHtml(config.branch)})</p>
+        <p style="font-size:.875rem;">Signed in as <strong>${escapeHtml(adminUser?.login || "")}</strong> via GitHub OAuth.</p>
+      </div>`;
+    }
+
     el.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1rem;">
-        <div class="card"><div style="font-size:1.5rem;font-weight:700;color:#0891b2">${posts.length}</div><div style="font-size:.8rem;color:#64748b">Posts</div></div>
-        <div class="card"><div style="font-size:1.5rem;font-weight:700;color:#0891b2">${dynamics.length}</div><div style="font-size:.8rem;color:#64748b">Dynamics</div></div>
-        <div class="card"><div style="font-size:1.5rem;font-weight:700;color:#0891b2">${repo.stargazers_count}</div><div style="font-size:.8rem;color:#64748b">Stars</div></div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="value">${posts.length}</div><div class="label">Total Posts</div></div>
+        <div class="stat-card"><div class="value">${publishedCount}</div><div class="label">Published</div></div>
+        <div class="stat-card"><div class="value">${draftCount}</div><div class="label">Drafts</div></div>
+        <div class="stat-card"><div class="value">${dynamics.length}</div><div class="label">Dynamics</div></div>
       </div>
+      ${extra}
       <div class="card">
-        <div class="card-header"><h3>Repository Info</h3></div>
-        <p style="font-size:.8rem;"><strong>${config.repo}</strong> (${config.branch})</p>
-        <p style="font-size:.8rem;color:#64748b;margin-top:.25rem;">${repo.description || ""}</p>
-      </div>
-    `;
+        <div class="card-header"><h3>Quick Links</h3></div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="navigateTo('posts')">📄 Manage Posts</button>
+          <button class="btn btn-primary btn-sm" onclick="navigateTo('dynamics')">💬 Add Dynamic</button>
+          <button class="btn btn-primary btn-sm" onclick="navigateTo('deploy')">🚀 Deploy Now</button>
+          ${MODE === "local" ? '<a class="btn btn-outline btn-sm" href="http://localhost:4321" target="_blank">🌐 View Blog</a>' : ''}
+        </div>
+      </div>`;
   } catch (err) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>' + err.message + '</p></div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
 // ====== Posts ======
 async function renderPosts(el, title, desc) {
   title.textContent = "📄 Posts";
-  desc.textContent = "Manage blog posts";
+  desc.textContent = "Manage your blog posts";
   try {
-    let files = await listFiles("src/content/posts");
-    const posts = [];
-    for (const f of files) {
-      if (!f.endsWith(".md") && !f.endsWith(".mdx")) continue;
-      posts.push({ slug: f.replace(/\.(md|mdx)$/, ""), file: f });
-    }
+    const posts = await listPosts();
     el.innerHTML = `
       <div class="card">
-        <div class="card-header"><h3>Posts (${posts.length})</h3>
-          <button class="btn btn-primary btn-sm" onclick="showPostForm()">+ New</button>
+        <div class="card-header">
+          <h3>All Posts (${posts.length})</h3>
+          <button class="btn btn-primary btn-sm" onclick="showPostForm()">+ New Post</button>
         </div>
-        ${posts.length === 0 ? '<div class="empty-state">No posts</div>' :
-          '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
-          posts.map(p => '<tr><td>' + escapeHtml(p.file) + '</td><td class="actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="showPostForm(\'' + p.slug + '\')">✏️</button>' +
-            '<button class="btn btn-danger btn-sm" onclick="deletePost(\'' + p.slug + '\')">🗑️</button></td></tr>').join("") +
-          '</tbody></table></div>'}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Title</th><th>Date</th><th>Status</th><th>Tags</th><th style="width:120px">Actions</th></tr></thead>
+            <tbody>
+              ${posts.length === 0 ? '<tr><td colspan="5" class="empty-state">No posts yet</td></tr>' :
+                posts.map(p => `<tr>
+                  <td><strong>${escapeHtml(p.title)}</strong><br><small style="color:var(--text-muted)">${escapeHtml(p.slug)}</small></td>
+                  <td style="font-size:.8rem">${escapeHtml(String(p.published || "-"))}</td>
+                  <td>${p.draft ? '<span class="badge badge-warning">Draft</span>' : '<span class="badge badge-success">Published</span>'} ${p.pinned ? '<span class="badge badge-info">Pinned</span>' : ""}</td>
+                  <td>${(p.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("") || "-"}</td>
+                  <td class="actions">
+                    <button class="btn btn-outline btn-sm" onclick="showPostForm('${escapeAttr(p.slug)}')">✏️ Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePost('${escapeAttr(p.slug)}')">🗑️</button>
+                  </td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div id="post-form"></div>
-    `;
+      <div id="post-form-container"></div>`;
   } catch (err) {
-    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
 async function showPostForm(slug) {
-  let fm = { title: "", description: "", tags: [], category: "", draft: true, published: new Date().toISOString().split("T")[0] };
+  const container = document.getElementById("post-form-container");
+  let frontmatter = { title: "", description: "", tags: [], category: "", draft: true, published: new Date().toISOString().split("T")[0] };
   let body = "";
   let isEdit = !!slug;
   if (slug) {
     try {
-      const ext = (await readFile("src/content/posts/" + slug + ".md")).content ? ".md" : ".mdx";
-      const data = await readFile("src/content/posts/" + slug + (ext === ".mdx" ? ".mdx" : ".md"));
-      const parsed = parseFM(data.content);
-      fm = parsed.frontmatter;
-      body = parsed.body;
-    } catch (e) { toast("Load failed: " + e.message, "error"); return; }
+      const data = await getPost(slug);
+      frontmatter = data.frontmatter;
+      body = data.body;
+    } catch (err) {
+      toast("Failed to load post: " + err.message, "error");
+      return;
+    }
   }
-  const container = document.getElementById("post-form");
-  container.innerHTML = '<div class="card"><div class="card-header"><h3>' + (isEdit ? "✏️ Edit" : "📝 New") + '</h3></div>' +
-    '<form onsubmit="savePost(event, \'' + (slug || "") + '\')">' +
-    (isEdit ? "" : '<div class="form-group"><label>Slug</label><input name="slug" placeholder="my-post" required></div>') +
-    '<div class="form-group"><label>Title</label><input name="title" value="' + escapeHtml(fm.title) + '" required></div>' +
-    '<div class="form-row"><div class="form-group"><label>Date</label><input name="published" type="date" value="' + fm.published + '"></div>' +
-    '<div class="form-group"><label>Category</label><input name="category" value="' + escapeHtml(fm.category || "") + '"></div></div>' +
-    '<div class="form-group"><label>Tags (comma)</label><input name="tags" value="' + ((fm.tags || []).join(", ")) + '"></div>' +
-    '<div class="form-group"><label>Description</label><textarea name="description" rows="2">' + escapeHtml(fm.description || "") + '</textarea></div>' +
-    '<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">' +
-    '<label style="font-size:.8rem;"><input type="checkbox" name="draft" ' + (fm.draft ? "checked" : "") + '> Draft</label>' +
-    '<label style="font-size:.8rem;"><input type="checkbox" name="pinned" ' + (fm.pinned ? "checked" : "") + '> Pinned</label></div>' +
-    '<div class="form-group"><label>Content (Markdown)</label><textarea name="body" rows="16" style="font-family:monospace;font-size:.75rem;">' + escapeHtml(body) + '</textarea></div>' +
-    '<div class="form-actions"><button type="submit" class="btn btn-primary">' + (isEdit ? "Update" : "Create") + '</button>' +
-    '<button type="button" class="btn btn-outline" onclick="document.getElementById(\'post-form\').innerHTML=\'\'">Cancel</button></div></form></div>';
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-header"><h3>${isEdit ? "✏️ Edit Post" : "📝 New Post"}</h3></div>
+      <form id="post-form" onsubmit="savePost(event)">
+        <input type="hidden" name="originalSlug" value="${escapeAttr(slug || "")}">
+        <div class="form-row">
+          <div class="form-group"><label>Slug (URL)</label><input type="text" name="slug" value="${escapeAttr(slug || "")}" ${isEdit ? "readonly" : ""} placeholder="my-post-title"></div>
+          <div class="form-group"><label>Title</label><input type="text" name="title" value="${escapeAttr(frontmatter.title || "")}" placeholder="Post title"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Published Date</label><input type="date" name="published" value="${escapeAttr(frontmatter.published || "")}"></div>
+          <div class="form-group"><label>Category</label><input type="text" name="category" value="${escapeAttr(frontmatter.category || "")}" placeholder="e.g. Technology"></div>
+        </div>
+        <div class="form-group"><label>Tags (comma-separated)</label><input type="text" name="tags" value="${escapeAttr((frontmatter.tags || []).join(", "))}" placeholder="tag1, tag2, tag3"></div>
+        <div class="form-group"><label>Description</label><textarea name="description" rows="2">${escapeHtml(frontmatter.description || "")}</textarea></div>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;"><input type="checkbox" name="draft" ${frontmatter.draft ? "checked" : ""}> Save as draft</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;"><input type="checkbox" name="pinned" ${frontmatter.pinned ? "checked" : ""}> Pinned</label>
+        </div>
+        <div class="form-group">
+          <label>Content (Markdown)</label>
+          <textarea name="body" rows="16" style="font-family:monospace;font-size:.8rem;line-height:1.5;">${escapeHtml(body)}</textarea>
+          <div class="markdown-hint">Full Markdown + Astro/MDX supported. Frontmatter is auto-generated.</div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">${isEdit ? "Update Post" : "Create Post"}</button>
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('post-form-container').innerHTML=''">Cancel</button>
+        </div>
+      </form>
+    </div>`;
   container.scrollIntoView({ behavior: "smooth" });
 }
 
-async function savePost(e, slug) {
+async function savePost(e) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const newSlug = fd.get("slug") || slug;
-  const title = fd.get("title");
+  const form = e.target;
+  const data = new FormData(form);
+  const originalSlug = data.get("originalSlug");
+  const slug = (data.get("slug") || "").trim();
+  if (!slug) { toast("Slug is required", "error"); return; }
   const frontmatter = {
-    title,
-    published: fd.get("published") || new Date().toISOString().split("T")[0],
-    description: fd.get("description") || "",
-    tags: (fd.get("tags") || "").split(",").map(t => t.trim()).filter(Boolean),
-    category: fd.get("category") || "",
-    draft: fd.get("draft") !== null,
-    pinned: fd.get("pinned") !== null,
+    title: data.get("title"),
+    published: data.get("published") || new Date().toISOString().split("T")[0],
+    description: data.get("description"),
+    tags: data.get("tags").split(",").map(t => t.trim()).filter(Boolean),
+    category: data.get("category"),
+    draft: data.get("draft") !== null,
+    pinned: data.get("pinned") !== null,
   };
-  const body = fd.get("body") || "";
-  const content = buildFM(frontmatter, body);
+  const body = data.get("body");
   try {
-    await writeFile("src/content/posts/" + newSlug + ".md", content, (slug ? "Update" : "Create") + " post: " + title);
-    toast("Post saved!", "success");
-    renderPosts(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+    if (originalSlug) {
+      await savePostData(slug, frontmatter, body, false);
+      toast("Post updated!", "success");
+    } else {
+      await savePostData(slug, frontmatter, body, true);
+      toast("Post created!", "success");
+    }
+    renderPage("posts");
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
 }
 
 async function deletePost(slug) {
-  if (!confirm("Delete " + slug + "?")) return;
+  if (!confirm(`Delete "${slug}"? This cannot be undone.`)) return;
   try {
-    const deleted = await deleteFile("src/content/posts/" + slug + ".md") || await deleteFile("src/content/posts/" + slug + ".mdx");
-    toast(deleted ? "Deleted" : "Not found", deleted ? "success" : "error");
-    renderPosts(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+    await deletePostData(slug);
+    toast("Post deleted", "success");
+    renderPage("posts");
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
@@ -472,50 +598,99 @@ async function deletePost(slug) {
 // ====== Dynamics ======
 async function renderDynamics(el, title, desc) {
   title.textContent = "💬 Dynamics";
-  desc.textContent = "";
+  desc.textContent = "Manage your micro-posts";
   try {
-    const files = await listFiles("src/content/dynamic");
-    el.innerHTML = '<div class="card"><div class="card-header"><h3>New Dynamic</h3></div>' +
-      '<form onsubmit="saveDynamic(event)"><div class="form-group"><textarea name="content" rows="3" placeholder="What\'s on your mind?" required></textarea></div>' +
-      '<div class="form-actions"><label style="font-size:.8rem;display:flex;align-items:center;gap:.25rem;"><input type="checkbox" name="pinned"> Pinned</label>' +
-      '<button type="submit" class="btn btn-primary btn-sm">Post</button></div></form></div>' +
-      '<div class="card"><div class="card-header"><h3>Dynamics (' + files.length + ')</h3></div>' +
-      (files.length === 0 ? '<div class="empty-state">None</div>' :
-      '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
-      files.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" onclick="deleteDynamic(\'' + f + '\')">🗑️</button></td></tr>').join("") +
-      '</tbody></table></div>') + '</div>';
+    const dynamics = await listDynamics();
+    el.innerHTML = `
+      <div class="card" id="dynamic-form-card">
+        <div class="card-header"><h3 id="dynamic-form-title">New Dynamic</h3></div>
+        <form onsubmit="saveDynamic(event)">
+          <input type="hidden" name="editSlug" value="">
+          <div class="form-group"><textarea name="content" rows="4" placeholder="What's on your mind?" required></textarea></div>
+          <div class="form-actions">
+            <label style="display:flex;align-items:center;gap:.375rem;font-size:.875rem;"><input type="checkbox" name="pinned"> Pinned</label>
+            <button type="submit" class="btn btn-primary btn-sm" id="dynamic-submit-btn">Post</button>
+            <button type="button" class="btn btn-outline btn-sm" id="dynamic-cancel-btn" style="display:none;" onclick="cancelDynamicEdit()">Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Recent Dynamics (${dynamics.length})</h3></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Date</th><th>Slug</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${dynamics.length === 0 ? '<tr><td colspan="4" class="empty-state">No dynamics yet</td></tr>' :
+                dynamics.map(d => `<tr>
+                  <td style="font-size:.8rem;white-space:nowrap;">${escapeHtml(String(d.published || ""))}</td>
+                  <td style="font-size:.8rem;">${escapeHtml(d.slug)}</td>
+                  <td>${d.pinned ? '<span class="badge badge-info">Pinned</span>' : ""}</td>
+                  <td class="actions">
+                    <button class="btn btn-outline btn-sm" onclick="showDynamicForm('${escapeAttr(d.slug)}')">✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteDynamic('${escapeAttr(d.slug)}')">🗑️</button>
+                  </td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
   } catch (err) {
-    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
 async function saveDynamic(e) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const content = fd.get("content");
-  const pinned = fd.get("pinned") !== null;
-  const now = new Date();
-  const slug = now.getFullYear() + "-" + pad(now.getMonth()+1) + "-" + pad(now.getDate()) + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
-  const fm = { published: now.toISOString(), pinned: pinned };
+  const form = e.target;
+  const content = form.querySelector('[name="content"]').value;
+  const pinned = form.querySelector('[name="pinned"]').checked;
+  const editSlug = form.querySelector('[name="editSlug"]').value;
   try {
-    await writeFile("src/content/dynamic/" + slug + ".md", buildFM(fm, content), "New dynamic");
-    toast("Posted!", "success");
-    renderDynamics(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+    if (editSlug) {
+      await saveDynamicData(editSlug, content, pinned, false);
+      toast("Dynamic updated!", "success");
+    } else {
+      await saveDynamicData("", content, pinned, true);
+      toast("Dynamic posted!", "success");
+    }
+    renderPage("dynamics");
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
 }
 
-async function deleteDynamic(file) {
-  if (!confirm("Delete " + file + "?")) return;
+async function showDynamicForm(slug) {
   try {
-    const ok = await deleteFile("src/content/dynamic/" + file);
-    if (ok) {
-      toast("Deleted", "success");
-      renderDynamics(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
-    } else {
-      toast("Delete failed: file not found on GitHub", "error");
-    }
+    const data = await getDynamic(slug);
+    const form = document.querySelector("#dynamic-form-card form");
+    form.querySelector('[name="editSlug"]').value = slug;
+    form.querySelector('[name="content"]').value = data.body || "";
+    form.querySelector('[name="pinned"]').checked = !!data.frontmatter.pinned;
+    document.getElementById("dynamic-form-title").textContent = "✏️ Edit Dynamic";
+    document.getElementById("dynamic-submit-btn").textContent = "Update";
+    document.getElementById("dynamic-cancel-btn").style.display = "";
+    form.querySelector('[name="content"]').focus();
+    document.getElementById("dynamic-form-card").scrollIntoView({ behavior: "smooth" });
+  } catch (err) {
+    toast("Failed to load: " + err.message, "error");
+  }
+}
+
+function cancelDynamicEdit() {
+  const form = document.querySelector("#dynamic-form-card form");
+  form.reset();
+  form.querySelector('[name="editSlug"]').value = "";
+  document.getElementById("dynamic-form-title").textContent = "New Dynamic";
+  document.getElementById("dynamic-submit-btn").textContent = "Post";
+  document.getElementById("dynamic-cancel-btn").style.display = "none";
+}
+
+async function deleteDynamic(slug) {
+  if (!confirm("Delete this dynamic?")) return;
+  try {
+    await deleteDynamicData(slug);
+    toast("Deleted", "success");
+    renderPage("dynamics");
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
@@ -524,75 +699,87 @@ async function deleteDynamic(file) {
 // ====== Spec Pages ======
 async function renderSpec(el, title, desc) {
   title.textContent = "📋 Pages";
-  desc.textContent = "Edit about, friends, guestbook";
+  desc.textContent = "Edit special pages (about, friends, guestbook)";
   try {
-    const files = await listFiles("src/content/spec");
-    el.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">' +
-      files.map(f => '<button class="btn btn-outline btn-sm" onclick="editSpec(\'' + f + '\')">' + escapeHtml(f) + '</button>').join("") +
-      '</div><div id="spec-form"></div>';
+    const pages = await listSpec();
+    el.innerHTML = `
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        ${pages.map(p => `<button class="btn btn-outline btn-sm" onclick="editSpecPage('${escapeAttr(p.slug)}')">${escapeHtml(p.title || p.slug)}</button>`).join("")}
+      </div>
+      <div id="spec-form"></div>`;
   } catch (err) {
-    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
-async function editSpec(file) {
+async function editSpecPage(slug) {
   try {
-    const data = await readFile("src/content/spec/" + file);
-    const parsed = parseFM(data.content);
+    const data = await getSpec(slug);
     const container = document.getElementById("spec-form");
-    container.innerHTML = '<div class="card"><div class="card-header"><h3>✏️ ' + file + '</h3></div>' +
-      '<form onsubmit="saveSpec(event, \'' + file + '\')">' +
-      '<div class="form-group"><label>Title</label><input name="title" value="' + escapeHtml(parsed.frontmatter.title || "") + '"></div>' +
-      '<div class="form-group"><label>Content</label><textarea name="body" rows="20" style="font-family:monospace;font-size:.75rem;">' + escapeHtml(parsed.body) + '</textarea></div>' +
-      '<div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form></div>';
+    container.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>✏️ Editing: ${escapeHtml(slug)}</h3></div>
+        <form onsubmit="saveSpecPage(event, '${escapeAttr(slug)}')">
+          <div class="form-group"><label>Title</label><input type="text" name="title" value="${escapeAttr(data.frontmatter.title || "")}"></div>
+          <div class="form-group"><label>Content (Markdown)</label><textarea name="body" rows="20" style="font-family:monospace;font-size:.8rem;line-height:1.5;">${escapeHtml(data.body)}</textarea></div>
+          <div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div>
+        </form>
+      </div>`;
+    container.scrollIntoView({ behavior: "smooth" });
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
 }
 
-async function saveSpec(e, file) {
+async function saveSpecPage(e, slug) {
   e.preventDefault();
-  const title = e.target.querySelector("[name='title']").value;
-  const body = e.target.querySelector("[name='body']").value;
+  const form = e.target;
+  const title = form.querySelector('[name="title"]').value;
+  const body = form.querySelector('[name="body"]').value;
   try {
-    const existing = await readFile("src/content/spec/" + file);
-    const parsed = parseFM(existing.content);
-    const fm = { ...parsed.frontmatter, title: title || parsed.frontmatter.title };
-    await writeFile("src/content/spec/" + file, buildFM(fm, body), "Update " + file);
-    toast("Saved!", "success");
+    await saveSpec(slug, title, body);
+    toast("Page saved!", "success");
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
 }
 
 // ====== Config ======
+const CONFIG_FILES = ["siteConfig.ts", "profileConfig.ts", "friendsConfig.ts", "announcementConfig.ts", "musicConfig.ts", "sidebarConfig.ts", "backgroundWallpaper.ts"];
+
 async function renderConfig(el, title, desc) {
   title.textContent = "⚙️ Config";
   desc.textContent = "Edit config files";
-  const files = ["siteConfig.ts","profileConfig.ts","friendsConfig.ts","announcementConfig.ts","musicConfig.ts","sidebarConfig.ts","backgroundWallpaper.ts"];
-  el.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">' +
-    files.map(f => '<button class="btn btn-outline btn-sm" onclick="editConfig(\'' + f + '\')">' + f + '</button>').join("") +
-    '</div><div id="config-editor"></div>';
+  el.innerHTML = `
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+      ${CONFIG_FILES.map(f => `<button class="btn btn-outline btn-sm" onclick="editConfigFile('${f}')">${f}</button>`).join("")}
+    </div>
+    <div id="config-editor"></div>`;
 }
 
-async function editConfig(file) {
+async function editConfigFile(name) {
+  if (!CONFIG_NAME_PATTERN.test(name)) { toast("Invalid config name", "error"); return; }
   try {
-    const data = await readFile("src/config/" + file);
+    const content = await readConfigFile(name);
     const container = document.getElementById("config-editor");
-    container.innerHTML = '<div class="card"><div class="card-header"><h3>' + file + '</h3></div>' +
-      '<form onsubmit="saveConfig(event, \'' + file + '\')">' +
-      '<div class="form-group"><textarea name="content" rows="24" style="font-family:monospace;font-size:.75rem;">' + escapeHtml(data.content) + '</textarea></div>' +
-      '<div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form></div>';
+    container.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>${escapeHtml(name)}</h3></div>
+        <form onsubmit="saveConfigFile(event, '${escapeAttr(name)}')">
+          <div class="form-group"><textarea name="content" rows="24" style="font-family:monospace;font-size:.8rem;line-height:1.5;">${escapeHtml(content)}</textarea></div>
+          <div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div>
+        </form>
+      </div>`;
   } catch (err) {
     toast("Failed: " + err.message, "error");
   }
 }
 
-async function saveConfig(e, file) {
+async function saveConfigFile(e, name) {
   e.preventDefault();
-  const content = e.target.querySelector("[name='content']").value;
+  const content = e.target.querySelector('[name="content"]').value;
   try {
-    await writeFile("src/config/" + file, content, "Update " + file);
+    await writeConfigFile(name, content);
     toast("Config saved! Redeploy to see changes.", "success");
   } catch (err) {
     toast("Failed: " + err.message, "error");
@@ -602,335 +789,372 @@ async function saveConfig(e, file) {
 // ====== Announcement ======
 async function renderAnnouncement(el, title, desc) {
   title.textContent = "📢 Announcement";
-  desc.textContent = "Edit site announcement";
+  desc.textContent = "Edit the site announcement";
   try {
-    const data = await readFile("src/config/announcementConfig.ts");
-    // Extract current values with simple parsing
-    const titleMatch = data.content.match(/title:\s*"([^"]*)"/);
-    const contentMatch = data.content.match(/content:\s*"([^"]*)"/);
-    const linkTextMatch = data.content.match(/text:\s*"([^"]*)"/);
-    const linkUrlMatch = data.content.match(/url:\s*"([^"]*)"/);
-    const enableMatch = data.content.match(/enable:\s*(true|false)/);
-
-    const currentTitle = titleMatch ? titleMatch[1] : "";
-    const currentContent = contentMatch ? contentMatch[1] : "";
-    const linkText = linkTextMatch ? linkTextMatch[1] : "";
-    const linkUrl = linkUrlMatch ? linkUrlMatch[1] : "";
-    const linkEnabled = enableMatch ? enableMatch[1] : "true";
-
-    el.innerHTML = '<div class="card"><div class="card-header"><h3>Edit Announcement</h3></div>' +
-      '<form onsubmit="saveAnnouncement(event)">' +
-      '<div class="form-group"><label>Title</label><input name="title" value="' + escapeHtml(currentTitle) + '"></div>' +
-      '<div class="form-group"><label>Content</label><textarea name="content" rows="4">' + escapeHtml(currentContent) + '</textarea></div>' +
-      '<hr style="margin:1rem 0;border:none;border-top:1px solid #e2e8f0;">' +
-      '<p style="font-size:.8rem;color:#64748b;margin-bottom:.75rem;">Optional Link</p>' +
-      '<div class="form-row"><div class="form-group"><label>Link Text</label><input name="linkText" value="' + escapeHtml(linkText) + '"></div>' +
-      '<div class="form-group"><label>Link URL</label><input name="linkUrl" value="' + escapeHtml(linkUrl) + '"></div></div>' +
-      '<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">' +
-      '<label style="font-size:.8rem;"><input type="checkbox" name="linkEnabled" ' + (linkEnabled === "true" ? "checked" : "") + '> Enable link</label></div>' +
-      '<div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form></div>';
+    const content = await readConfigFile("announcementConfig.ts");
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>Announcement Config</h3></div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;">Edit the announcementConfig.ts file directly. Changes take effect on next build/deploy.</p>
+        <form onsubmit="saveConfigFile(event, 'announcementConfig.ts')">
+          <div class="form-group"><textarea name="content" rows="24" style="font-family:monospace;font-size:.8rem;line-height:1.5;">${escapeHtml(content)}</textarea></div>
+          <div class="form-actions"><button type="submit" class="btn btn-primary">Save Config</button></div>
+        </form>
+      </div>`;
   } catch (err) {
-    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
-  }
-}
-
-async function saveAnnouncement(e) {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const title = fd.get("title") || "Announcement";
-  const content = fd.get("content") || "";
-  const linkText = fd.get("linkText") || "";
-  const linkUrl = fd.get("linkUrl") || "";
-  const linkEnabled = fd.get("linkEnabled") !== null;
-
-  const configContent = `import type { AnnouncementConfig } from "../types/announcementConfig";
-
-export const announcementConfig: AnnouncementConfig = {
-	// 公告标题
-	title: "${title}",
-
-	// 公告内容
-	content: "${content}",
-
-	// 是否允许用户关闭公告
-	closable: true,
-
-	link: {
-		// 启用链接
-		enable: ${linkEnabled},
-		// 链接文本
-		text: "${linkText}",
-		// 链接 URL
-		url: "${linkUrl}",
-		// 内部链接
-		external: false,
-	},
-};`;
-
-  try {
-    await writeFile("src/config/announcementConfig.ts", configContent, "Update announcement");
-    toast("Announcement saved! Redeploy to see changes.", "success");
-    renderAnnouncement(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
-  } catch (err) {
-    toast("Failed: " + err.message, "error");
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
 // ====== Music ======
 async function renderMusic(el, title, desc) {
   title.textContent = "🎵 Music";
-  desc.textContent = "Manage music files and playlist";
+  desc.textContent = "Upload and manage music files";
   try {
-    // List music files from repo
-    const musicFiles = await listFiles("public/assets/music");
-    const audioFiles = musicFiles.filter(f => /\.(mp3|flac|wav|ogg|m4a)$/i.test(f) && f !== "cover");
-    const covers = musicFiles.filter(f => /\.(webp|png|jpg|jpeg|avif)$/i.test(f));
+    let music = [], covers = [], playlist = [];
+    if (MODE === "local") {
+      const data = await apiLocal("/music");
+      music = data.music || [];
+      covers = data.covers || [];
+    } else {
+      const files = await ghListFiles("public/assets/music");
+      music = files.filter(f => /\.(mp3|flac|wav|ogg|m4a)$/i.test(f));
+      covers = files.filter(f => /\.(webp|png|jpg|jpeg|avif)$/i.test(f));
+    }
+    playlist = await readPlaylist();
 
-    // Read musicConfig to show current playlist
-    let playlistHtml = "";
-    try {
-      const configData = await readFile("src/config/musicConfig.ts");
-      const playlistMatch = configData.content.match(/playlist:\s*\[([\s\S]*?)\],\s*\n/);
-      if (playlistMatch && playlistMatch[1].trim()) {
-        playlistHtml = '<pre style="font-size:.75rem;background:#f8fafc;padding:.75rem;border-radius:.375rem;overflow-x:auto;max-height:200px;overflow-y:auto;">' + escapeHtml(playlistMatch[0]) + '</pre>';
-      } else {
-        playlistHtml = '<div class="empty-state">Playlist is empty</div>';
-      }
-    } catch { playlistHtml = '<div class="empty-state">Could not load config</div>'; }
+    const coverHtml = covers.length > 0
+      ? '<div class="card"><div class="card-header"><h3>Cover Art (' + covers.length + ')</h3></div><div style="display:flex;gap:.5rem;flex-wrap:wrap;">' +
+        covers.map(c => {
+          const src = MODE === "local"
+            ? "/assets/music/cover/" + encodeURIComponent(c)
+            : "https://raw.githubusercontent.com/" + config.repo + "/" + config.branch + "/public/assets/music/cover/" + encodeURIComponent(c);
+          return '<div style="text-align:center;"><img src="' + src + '" style="width:80px;height:80px;object-fit:cover;border-radius:.25rem;"><p style="font-size:.7rem;margin-top:.25rem;">' + escapeHtml(c) + '</p></div>';
+        }).join("") + '</div></div>'
+      : "";
 
-    el.innerHTML = '<div class="card"><div class="card-header"><h3>Upload Music</h3></div>' +
-      '<p style="font-size:.8rem;color:#64748b;margin-bottom:.75rem;">Upload MP3 files (max ~10MB via GitHub API). After upload, edit the playlist below.</p>' +
-      '<form onsubmit="uploadMusic(event)">' +
-      '<div class="form-group"><label>MP3 File</label><input type="file" name="audio" accept=".mp3,.flac,.wav,.ogg" required></div>' +
-      '<div id="upload-progress" style="display:none;margin-bottom:.5rem;"><div style="height:4px;background:#e2e8f0;border-radius:999px;overflow:hidden;"><div id="upload-bar" style="height:100%;width:0%;background:#0891b2;transition:width .3s;"></div></div></div>' +
-      '<button type="submit" class="btn btn-primary btn-sm">Upload</button></form></div>' +
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>Upload Music</h3></div>
+        <form id="music-upload-form">
+          <input type="hidden" name="name" value="">
+          <input type="hidden" name="artist" value="">
+          <div class="form-row">
+            <div class="form-group"><label>Audio File (mp3, flac, wav, ogg)</label><input type="file" name="audio" accept=".mp3,.flac,.wav,.ogg,.m4a" required></div>
+            <div class="form-group"><label>Cover Art (optional)</label><input type="file" name="cover" accept=".webp,.png,.jpg,.jpeg,.avif"></div>
+          </div>
+          ${MODE === "github" ? '<div class="markdown-hint">GitHub API 上传上限约 10MB，超过请用本地 admin。</div>' : ""}
+          <button type="submit" class="btn btn-primary btn-sm">Upload & Add to Playlist</button>
+        </form>
+      </div>
+      ${MODE === "local" ? `
+      <div class="card">
+        <div class="card-header"><h3>Search Music</h3></div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem;">Search YouTube for songs, download MP3, and auto-add to playlist.</p>
+        <div style="display:flex;gap:.5rem;">
+          <input type="text" id="music-search-input" placeholder="Search for a song..." style="flex:1;padding:.5rem .75rem;border:1px solid var(--border);border-radius:.375rem;font-size:.875rem;">
+          <button class="btn btn-primary" onclick="searchMusic()">Search</button>
+        </div>
+        <div id="music-search-results" style="margin-top:.75rem;"></div>
+      </div>` : ""}
+      <div class="card">
+        <div class="card-header"><h3>Playlist (${playlist.length})</h3></div>
+        ${playlist.length === 0 ? '<div class="empty-state">Playlist is empty</div>' :
+          '<div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Artist</th><th>File</th></tr></thead><tbody>' +
+          playlist.map(s => '<tr><td>' + escapeHtml(s.name || "") + '</td><td>' + escapeHtml(s.artist || "") + '</td><td style="font-size:.8rem;">' + escapeHtml((s.url || "").split("/").pop()) + '</td></tr>').join("") +
+          '</tbody></table></div>'}
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Music Files (${music.length})</h3></div>
+        ${music.length === 0 ? '<div class="empty-state">No music files uploaded</div>' :
+          '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
+          music.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" data-file="' + escapeAttr(f) + '" onclick="deleteMusicFile(this.dataset.file)">🗑️</button></td></tr>').join("") +
+          '</tbody></table></div>'}
+      </div>
+      ${coverHtml}`;
 
-      '<div class="card"><div class="card-header"><h3>Music Files (' + audioFiles.length + ')</h3></div>' +
-      (audioFiles.length === 0 ? '<div class="empty-state">No music files</div>' :
-      '<div class="table-wrap"><table class="table"><thead><tr><th>File</th><th>Actions</th></tr></thead><tbody>' +
-      audioFiles.map(f => '<tr><td>' + escapeHtml(f) + '</td><td class="actions"><button class="btn btn-danger btn-sm" data-path="public/assets/music/' + escapeHtml(f).replace(/"/g, "&quot;") + '" onclick="deleteMusicFile(this.dataset.path)">🗑️</button></td></tr>').join("") +
-      '</tbody></table></div>') + '</div>' +
-
-      (covers.length > 0 ? '<div class="card"><div class="card-header"><h3>Covers (' + covers.length + ')</h3></div>' +
-      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">' +
-      covers.map(c => '<div style="text-align:center;"><img src="https://raw.githubusercontent.com/' + config.repo + '/master/public/assets/music/cover/' + c + '" style="width:60px;height:60px;object-fit:cover;border-radius:.25rem;"><p style="font-size:.65rem;margin-top:.25rem;color:#64748b;">' + c + '</p></div>').join("") +
-      '</div></div>' : '') +
-
-      '<div class="card"><div class="card-header"><h3>Playlist (musicConfig.ts)</h3>' +
-      '<a class="btn btn-outline btn-sm" href="#" onclick="navigateTo(\'config\');setTimeout(function(){editConfig(\'musicConfig.ts\')},100);">✏️ Edit Config</a></div>' +
-      playlistHtml + '</div>';
+    document.getElementById("music-upload-form").addEventListener("submit", uploadMusic);
   } catch (err) {
-    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
 async function uploadMusic(e) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const file = fd.get("audio");
-  // Auto-detect name from filename
-  const rawName = file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ").replace(/\s+/g, " ").trim();
-  const name = rawName || "Unknown";
-  const artist = "Unknown";
-  // Sanitize filename for safe config entries
-  const safeName = file.name.replace(/\.[^.]+$/, "").replace(/[^\w\s\-()]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
-  const ext = file.name.match(/\.[^.]+$/)?.[0] || ".mp3";
-  const cleanFile = safeName + ext;
-  const progress = document.getElementById("upload-progress");
-  const bar = document.getElementById("upload-bar");
+  const form = e.target;
+  const file = form.querySelector('[name="audio"]').files[0];
+  const coverFile = form.querySelector('[name="cover"]').files[0];
+  if (!file) { toast("Choose an audio file", "error"); return; }
 
+  const rawName = file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ").replace(/\s+/g, " ").trim();
+  const songName = rawName || "Unknown";
+  const safeName = file.name.replace(/\.[^.]+$/, "").replace(/[^\p{L}\p{N}\s\-()]/gu, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  const ext = (file.name.match(/\.[^.]+$/)?.[0] || ".mp3").toLowerCase();
+
+  if (MODE === "local") {
+    const formData = new FormData();
+    formData.set("name", songName);
+    formData.set("artist", "Unknown");
+    formData.set("audio", file);
+    if (coverFile) formData.set("cover", coverFile);
+    try {
+      const res = await fetch("/api/music/upload-and-add", { method: "POST", body: formData });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || "Upload failed");
+      toast("Uploaded and added to playlist!", "success");
+      renderPage("music");
+    } catch (err) {
+      toast("Upload failed: " + err.message, "error");
+    }
+    return;
+  }
+
+  // GitHub mode: upload via the worker proxy (base64)
   if (file.size > 10 * 1024 * 1024) {
     toast("File too large (>10MB). Use local admin instead.", "error");
     return;
   }
-
-  progress.style.display = "block";
-  bar.style.width = "10%";
-
   try {
-    // Read file as base64
-    const b64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(",")[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-    bar.style.width = "50%";
-
-    // Upload via GitHub API
-    const path = "public/assets/music/" + cleanFile;
-    await ghPut("/repos/" + config.repo + "/contents/" + path, {
-      message: "Add music: " + name,
+    const b64 = await readFileAsBase64(file);
+    const cleanFile = safeName + ext;
+    await ghPut("/repos/" + config.repo + "/contents/public/assets/music/" + cleanFile, {
+      message: "Add music: " + songName,
       content: b64,
       branch: config.branch,
     });
-
-    bar.style.width = "100%";
-
-    // Auto-add to playlist
-    try {
-      const configData = await readFile("src/config/musicConfig.ts");
-      const entry = { name, artist, url: "/assets/music/" + cleanFile, cover: "", lrc: "" };
-      const entryLines = [
-        "\t\t\t{",
-        "\t\t\t\tname: " + JSON.stringify(entry.name) + ",",
-        "\t\t\t\tartist: " + JSON.stringify(entry.artist) + ",",
-        "\t\t\t\turl: " + JSON.stringify(entry.url) + ",",
-        "\t\t\t\tcover: \"\",",
-        "\t\t\t\tlrc: \"\",",
-        "\t\t\t}",
-      ].join("\n");
-
-      // Extract existing entries with brace/bracket depth counting
-      const content = configData.content;
-      let existingRaw = "";
-      const ps = content.indexOf("playlist: [");
-      if (ps !== -1) {
-        let braceDepth = 0, bracketDepth = 0, endPos = -1;
-        const inner = content.slice(ps + "playlist: [".length);
-        for (let i = 0; i < inner.length; i++) {
-          const ch = inner[i];
-          if (ch === "{") braceDepth++;
-          if (ch === "}") braceDepth--;
-          if (ch === "[") bracketDepth++;
-          if (ch === "]") {
-            if (braceDepth === 0 && bracketDepth === 0) { endPos = i; break; }
-            bracketDepth--;
-          }
-        }
-        if (endPos !== -1) existingRaw = inner.slice(0, endPos).trim();
-      }
-
-      // Rebuild full config from template
-      const hasExisting = existingRaw.length > 0;
-      const allEntries = hasExisting ? entryLines + ",\n" + existingRaw : entryLines;
-      const header = content.slice(0, content.indexOf("local:"));
-      const updated = header + "\tlocal: {\n\t\tplaylist: [\n" + allEntries + "\n\t\t],\n\t},\n};";
-
-      if (ps !== -1) {
-        await writeFile("src/config/musicConfig.ts", updated, "Add music to playlist: " + name);
-      }
-    } catch (configErr) {
-      console.error("Failed to update playlist config", configErr);
+    if (coverFile) {
+      const coverExt = (coverFile.name.match(/\.[^.]+$/)?.[0] || ".png").toLowerCase();
+      const coverClean = safeName + "-cover" + coverExt;
+      const coverB64 = await readFileAsBase64(coverFile);
+      await ghPut("/repos/" + config.repo + "/contents/public/assets/music/cover/" + coverClean, {
+        message: "Add cover: " + songName,
+        content: coverB64,
+        branch: config.branch,
+      });
     }
-
+    // structured playlist update
+    const playlist = await readPlaylist();
+    playlist.unshift({ name: songName, artist: "Unknown", url: "/assets/music/" + cleanFile, cover: "", lrc: "" });
+    await writePlaylist(playlist);
     toast("Uploaded and added to playlist! Redeploy to publish.", "success");
-    setTimeout(() => renderMusic(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc")), 500);
+    renderPage("music");
   } catch (err) {
     toast("Upload failed: " + err.message, "error");
-    progress.style.display = "none";
   }
 }
 
-async function deleteMusicFile(path) {
-  if (!confirm("Delete " + path.split("/").pop() + "?")) return;
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function deleteMusicFile(file) {
+  if (!confirm(`Delete "${file}"?`)) return;
   try {
-    const existing = await readFile(path);
-    if (!existing.sha) { toast("Not found", "error"); return; }
-    await ghDelete("/repos/" + config.repo + "/contents/" + path, {
-      body: JSON.stringify({ message: "Delete music file", sha: existing.sha, branch: config.branch })
-    });
+    if (MODE === "local") {
+      await apiLocal("/music/" + encodeURIComponent(file), { method: "DELETE" });
+    } else {
+      const ok = await ghDeleteFile("public/assets/music/" + file);
+      if (!ok) { toast("Not found", "error"); return; }
+    }
     toast("Deleted", "success");
-    renderMusic(document.getElementById("page-content"), document.getElementById("page-title"), document.getElementById("page-desc"));
+    renderPage("music");
   } catch (err) {
     toast("Failed: " + err.message, "error");
+  }
+}
+
+async function searchMusic() {
+  const q = document.getElementById("music-search-input").value.trim();
+  if (!q) return;
+  const div = document.getElementById("music-search-results");
+  div.innerHTML = '<div class="loading">Searching mp3juice...</div>';
+  try {
+    const data = await apiLocal("/music/mp3juice-search?q=" + encodeURIComponent(q));
+    const r = data.results || [];
+    if (r.length === 0) { div.innerHTML = '<div class="empty-state">No results found</div>'; return; }
+    div.innerHTML = '<div style="margin-bottom:.5rem;font-size:.8rem;color:var(--text-muted);">' + r.length + ' results from mp3juice</div><div class="table-wrap"><table class="table"><thead><tr><th>Title</th><th>Duration</th><th>Actions</th></tr></thead><tbody>' +
+      r.map(v => '<tr><td><strong>' + escapeHtml(v.title) + '</strong></td><td>' + escapeHtml(v.duration || "") + '</td><td class="actions"><button class="btn btn-primary btn-sm" data-id="' + escapeAttr(v.id) + '" data-title="' + escapeAttr(v.title) + '" onclick="downloadMusic(this)">Download</button></td></tr>').join("") +
+      '</tbody></table></div>';
+  } catch (err) {
+    div.innerHTML = '<div class="empty-state">Error: ' + escapeHtml(err.message) + '</div>';
+  }
+}
+
+async function downloadMusic(btn) {
+  btn.disabled = true;
+  btn.textContent = "Downloading...";
+  try {
+    const result = await apiLocal("/music/playwright-download", {
+      method: "POST",
+      body: JSON.stringify({ videoId: btn.dataset.id, title: btn.dataset.title }),
+    });
+    if (result.success) {
+      toast("Downloaded and added to playlist!", "success");
+      renderPage("music");
+    } else {
+      throw new Error(result.error || "Download failed");
+    }
+  } catch (err) {
+    toast("Download failed: " + err.message, "error");
+    btn.disabled = false;
+    btn.textContent = "Download";
   }
 }
 
 // ====== Deploy ======
 async function renderDeploy(el, title, desc) {
   title.textContent = "🚀 Deploy";
-  desc.textContent = "Commit changes and trigger GitHub Pages build";
+  desc.textContent = MODE === "local" ? "Sync changes to GitHub Pages" : "Trigger a GitHub Actions deploy";
   try {
-    const repo = await ghGet("/repos/" + config.repo + "/git/ref/heads/" + config.branch);
-    const commit = await ghGet("/repos/" + config.repo + "/git/commits/" + repo.object.sha);
-    el.innerHTML = '<div class="card"><div class="card-header"><h3>Git Status</h3></div>' +
-      '<p style="font-size:.8rem;"><strong>Branch:</strong> ' + config.branch + '</p>' +
-      '<p style="font-size:.8rem;color:#64748b;margin-top:.25rem;">Latest: ' + commit.message.split("\n")[0] + '</p></div>' +
-      '<div class="card"><div class="card-header"><h3>Deploy</h3></div>' +
-      '<div class="form-group"><label>Commit message</label>' +
-      '<input type="text" id="deploy-msg" value="chore: update blog content" style="width:100%;padding:.4rem .6rem;border:1px solid #e2e8f0;border-radius:.375rem;font-size:.8rem;"></div>' +
-      '<button class="btn btn-success" onclick="doDeploy()">🚀 Commit & Push</button>' +
-      '<div id="deploy-result" style="margin-top:.75rem;"></div></div>';
+    const status = await deployStatus();
+    const isLocal = MODE === "local";
+
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>Status</h3></div>
+        <p style="font-size:.875rem;margin-bottom:.5rem;"><strong>Branch:</strong> ${escapeHtml(status.branch || "-")}</p>
+        <p style="font-size:.875rem;margin-bottom:.5rem;"><strong>Last Commit:</strong> ${escapeHtml(status.lastCommit || "-")}</p>
+        ${isLocal ? `<p style="font-size:.875rem;"><strong>Pending Changes:</strong> ${status.hasChanges ? status.changes.length : "None — clean"}</p>
+          ${status.hasChanges ? `<div class="table-wrap" style="margin-top:.75rem;"><table class="table"><thead><tr><th>Status</th><th>File</th></tr></thead><tbody>${status.changes.map(c => `<tr><td><span class="badge badge-warning">${escapeHtml(c.status)}</span></td><td style="font-size:.8rem;">${escapeHtml(c.file)}</td></tr>`).join("")}</tbody></table></div>` : ""}`
+        : ""}
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>${isLocal ? "Sync to GitHub" : "Deploy"}</h3></div>
+        <p style="font-size:.875rem;margin-bottom:.75rem;">
+          ${isLocal
+            ? "Commit all changes and push to GitHub. The GitHub Actions workflow will automatically build and deploy to Pages."
+            : "Trigger the deploy.yml workflow via GitHub Actions. Push changes first if needed."}
+        </p>
+        <div class="form-group">
+          <label>Commit Message</label>
+          <input type="text" id="commit-message" value="${isLocal ? "chore: update blog content via admin panel" : "chore: update blog content"}" placeholder="Commit message">
+        </div>
+        <button class="btn btn-success" id="deploy-btn" onclick="syncDeploy()">🚀 ${isLocal ? "Sync & Deploy" : "Deploy"}</button>
+      </div>
+      <div id="deploy-result"></div>`;
   } catch (err) {
-    el.innerHTML = '<div class="empty-state">⚠️ ' + err.message + '</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${escapeHtml(err.message)}</p></div>`;
   }
 }
 
-async function doDeploy() {
-  const btn = event.target;
+async function syncDeploy() {
+  const btn = document.getElementById("deploy-btn");
+  const resultEl = document.getElementById("deploy-result");
+  const message = document.getElementById("commit-message").value;
   btn.disabled = true;
-  const resultDiv = document.getElementById("deploy-result");
-  resultDiv.innerHTML = '<div class="loading">Working...</div>';
-
+  resultEl.innerHTML = '<div class="loading">Working...</div>';
   try {
-    // Create a commit with all changes via the API
-    const msg = document.getElementById("deploy-msg").value || "chore: update blog content";
-    
-    // Trigger GitHub Actions workflow
-    const workflowRes = await fetch(GITHUB_API + "/repos/" + config.repo + "/actions/workflows/deploy.yml/dispatches", {
-      method: "POST",
-      headers: {
-        "Authorization": "token " + ghToken,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ ref: config.branch }),
-    });
-
-    if (!workflowRes.ok) {
-      const err = await workflowRes.json().catch(() => ({}));
-      throw new Error(err.message || "HTTP " + workflowRes.status);
-    }
-
-    resultDiv.innerHTML = '<div style="color:#22c55e;font-size:.875rem;">✅ Deploy triggered! GitHub Actions will build and deploy.</div>' +
-      '<p style="font-size:.75rem;color:#64748b;margin-top:.5rem;">Check progress: <a href="https://github.com/' + config.repo + '/actions" target="_blank">View Actions →</a></p>';
+    const result = await doDeploy(message);
+    resultEl.innerHTML = `<div class="card" style="border:2px solid var(--success);">
+      <p style="color:var(--success);font-weight:500;">✅ ${escapeHtml(result.message)}</p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.5rem;">${result.via === "git" ? "GitHub Actions will deploy automatically. Check in a few minutes." : '<a href="https://github.com/' + escapeHtml(config.repo) + '/actions" target="_blank">View Actions →</a>'}</p>
+    </div>`;
     toast("Deploy triggered!", "success");
+    setTimeout(() => renderPage("deploy"), 2000);
   } catch (err) {
-    resultDiv.innerHTML = '<div style="color:#ef4444;font-size:.875rem;">❌ ' + err.message + '</div>';
+    btn.disabled = false;
+    resultEl.innerHTML = `<div class="card" style="border:2px solid var(--danger);">
+      <p style="color:var(--danger);font-weight:500;">❌ ${escapeHtml(err.message)}</p>
+    </div>`;
+    toast("Deploy failed: " + err.message, "error");
   }
-  btn.disabled = false;
 }
 
-// ====== FM Parser ======
-function parseFM(content) {
-  const m = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!m) return { frontmatter: {}, body: content };
-  const fm = {};
-  for (const line of m[1].split("\n")) {
-    const ci = line.indexOf(":");
-    if (ci === -1) continue;
-    const k = line.slice(0, ci).trim();
-    let v = line.slice(ci + 1).trim();
-    if (v === "true") v = true; else if (v === "false") v = false;
-    else if (/^\d+$/.test(v)) v = parseInt(v);
-    else if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
-    else if (v.startsWith("[") && v.endsWith("]")) {
-      v = v.slice(1, -1).split(",").map(s => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+// ====== Auth (online mode) ======
+function renderLogin() {
+  const el = document.getElementById("page-content");
+  document.getElementById("page-title").textContent = "🔐 Login";
+  document.getElementById("page-desc").textContent = "";
+  el.innerHTML = `
+    <div style="max-width:400px;margin:2rem auto;">
+      <div class="card">
+        <div class="card-header"><h3>Admin Login</h3></div>
+        <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1rem;">Sign in with GitHub. Only the repository owner's account can manage the blog.</p>
+        <a class="btn btn-primary" style="width:100%;justify-content:center;" href="${escapeAttr(API_BASE + "/api/oauth/authorize")}">🔑 Login with GitHub</a>
+        <div class="markdown-hint" style="margin-top:.75rem;">Grant access to the <strong>${escapeHtml(config.repo || "")}</strong> repository only.</div>
+      </div>
+    </div>`;
+}
+
+function logout() {
+  fetch(API_BASE + "/api/logout", { method: "POST", credentials: "include" }).finally(() => location.reload());
+}
+
+// ====== Utilities ======
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  const div = document.createElement("div");
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
+function escapeAttr(str) {
+  return escapeHtml(String(str ?? "")).replace(/"/g, "&quot;");
+}
+
+// ====== Init ======
+(async function init() {
+  // Detect mode: online config.json carries apiBase; local Express has none.
+  try {
+    const res = await fetch("config.json");
+    if (res.ok) {
+      config = await res.json();
+      document.title = config.title || "Firefly Admin";
+      if (config.apiBase) {
+        MODE = "github";
+        API_BASE = config.apiBase;
+      }
     }
-    fm[k] = v;
+  } catch { /* local mode */ }
+
+  const footer = document.getElementById("login-status");
+
+  if (MODE === "github") {
+    try {
+      const me = await fetch(API_BASE + "/api/me", { credentials: "include" });
+      if (me.ok) {
+        adminUser = await me.json();
+        authed = true;
+        footer.innerHTML = "✅ " + escapeHtml(adminUser.login) + ' · <a href="#" onclick="logout();return false;">logout</a>';
+      }
+    } catch { /* worker unreachable */ }
+    if (!authed) {
+      footer.textContent = "Not signed in";
+      renderLogin();
+      return;
+    }
+  } else {
+    footer.textContent = "Local mode · port 3000";
   }
-  return { frontmatter: fm, body: m[2].trim() };
-}
 
-function buildFM(fm, body) {
-  const lines = Object.entries(fm).map(([k, v]) => {
-    if (Array.isArray(v)) return v.length === 0 ? k + ": []" : k + ": [" + v.map(x => '"' + x + '"').join(", ") + "]";
-    if (typeof v === "string" && /[:\s\[\]]/.test(v)) return k + ': "' + v + '"';
-    return k + ": " + v;
-  });
-  return "---\n" + lines.join("\n") + "\n---\n\n" + body;
-}
+  navigateTo(location.hash.slice(1) || "dashboard");
+})();
 
-function pad(n) { return String(n).padStart(2, "0"); }
-
-function escapeHtml(s) {
-  if (!s) return "";
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
+// Functions referenced by inline onclick attributes must be global.
+Object.assign(window, {
+	navigateTo,
+	showPostForm,
+	savePost,
+	deletePost,
+	saveDynamic,
+	showDynamicForm,
+	cancelDynamicEdit,
+	deleteDynamic,
+	editSpecPage,
+	saveSpecPage,
+	editConfigFile,
+	saveConfigFile,
+	searchMusic,
+	downloadMusic,
+	deleteMusicFile,
+	syncDeploy,
+	logout,
+});
 </script>
 </body>
 </html>

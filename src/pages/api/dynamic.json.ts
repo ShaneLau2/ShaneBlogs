@@ -2,6 +2,7 @@ import { createMarkdownProcessor } from "@astrojs/markdown-remark";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseFrontmatter } from "../../../admin/web/frontmatter.js";
 import {
 	dynamicSearchText,
 	dynamicSlug,
@@ -10,36 +11,6 @@ import {
 
 const DYNAMIC_DIR = "src/content/dynamic";
 const markdownImagePattern = /!\[([^\]]*)\]\((\S+?)(?:\s+["']([^"']*)["'])?\)/g;
-
-// 简易 frontmatter 解析器（仅支持 dynamic 条目格式）
-function parseFrontmatter(content: string): {
-	data: Record<string, unknown>;
-	body: string;
-} {
-	const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-	if (!match) return { data: {}, body: content };
-
-	const yaml = match[1];
-	const body = match[2] || "";
-	const data: Record<string, unknown> = {};
-
-	for (const line of yaml.split("\n")) {
-		const kv = line.match(/^(\w+):\s*(.+)$/);
-		if (kv) {
-			let value: unknown = kv[2].trim();
-			// 去掉可选的外层引号
-			if (typeof value === "string") {
-				value = value.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
-			}
-			if (value === "true") value = true;
-			else if (value === "false") value = false;
-			else if (kv[1] === "published") value = new Date(value as string);
-			data[kv[1]] = value;
-		}
-	}
-
-	return { data, body };
-}
 
 function loadDynamics() {
 	const dir = join(
@@ -61,7 +32,9 @@ function loadDynamics() {
 			id: file,
 			body,
 			data: {
-				published: (data.published as Date) || new Date(),
+				published: data.published
+					? new Date(data.published as string)
+					: new Date(),
 				pinned: (data.pinned as boolean) || false,
 			},
 		};
