@@ -15,10 +15,14 @@
 
 运行在 `http://localhost:3000` 的本地后台管理系统。
 
+> 本地版与在线版共用**同一份前端**：规范源在 `admin/web/`（含共享的 `frontmatter.js` 解析器），通过 `pnpm admin:sync-web` 同步到 `admin/public/`（本地 Express 服务）和 `public/admin/`（GitHub Pages 部署）。改前端请只改 `admin/web/`。
+
 ```bash
-pnpm admin                # 启动（默认密码 admin）
-ADMIN_PASSWORD=你的密码 pnpm admin  # 自定义密码
+pnpm admin                # 启动（默认监听 http://localhost:3000，仅绑 127.0.0.1）
+ADMIN_PASSWORD_HASH=<sha256> pnpm admin  # 用自定义密码哈希启动
 ```
+
+**首次使用请设置自己的密码**：运行 `pnpm admin:set-pwd 你的密码`，把输出的 SHA-256 哈希填入 `public/admin/config.json` 的 `passwordHash`（或设置 `ADMIN_PASSWORD_HASH` 环境变量）。服务器没有配置密码哈希时会直接报错退出，不会回退到任何硬编码默认值。
 
 | 页面 | 功能 |
 |------|------|
@@ -39,12 +43,23 @@ ADMIN_PASSWORD=你的密码 pnpm admin  # 自定义密码
 https://你的用户名.github.io/仓库名/admin/
 ```
 
-通过 GitHub REST API 直接操作仓库文件，功能与本地版基本一致（不含音乐搜索下载）。
+通过 GitHub OAuth 登录（不再使用密码 + Personal Access Token）：浏览器跳转到 GitHub 授权后，由 `admin-worker/` 的 Cloudflare Worker 在服务端持有 token，SPA 所有 GitHub API 请求经 Worker 代理转发，浏览器端永远拿不到 token。
 
-**首次使用：**
-1. 设置密码：`pnpm admin:set-pwd 你的密码`，将输出的 SHA-256 哈希填入 `public/admin/config.json`
-2. 准备 GitHub Personal Access Token（需 `repo` 权限）
-3. 推送到 GitHub，访问 `/admin/` 路径
+**首次使用（一次性配置）：**
+1. 在 [GitHub OAuth Apps](https://github.com/settings/developers) 创建一个 OAuth App：
+   - Homepage URL：`https://你的用户名.github.io/仓库名/admin/`
+   - Authorization callback URL：`https://<你的-worker-域名>.workers.dev/api/oauth/callback`（与下方 Worker 域名一致）
+2. 部署 Worker：
+   ```bash
+   pnpm admin-worker:deploy
+   wrangler secret put GITHUB_CLIENT_SECRET   # OAuth App 的 Client secret
+   wrangler secret put AUTH_SECRET            # 随机密钥，用于加密会话 cookie（可用 openssl rand -hex 32 生成）
+   ```
+   `admin-worker/wrangler.jsonc` 里配置 `GITHUB_CLIENT_ID`、`ADMIN_LOGIN`（仅允许此账号登录）、`APP_URL`、`SESSION_TTL`。
+3. 把 Worker 的域名填入 `public/admin/config.json` 的 `apiBase`，推送到 GitHub，访问 `/admin/`。
+4. 授权时在 GitHub 页面上**只选择本博客仓库**，不要授予其他仓库访问权。
+
+> `config.json` 里的 `passwordHash` 仅供**本地** admin 面板使用，与在线面板无关。
 
 ### 🚀 GitHub Pages 自动部署
 
@@ -62,9 +77,9 @@ https://你的用户名.github.io/仓库名/admin/
 | 命令 | 用途 |
 |------|------|
 | `pnpm dev` | 启动博客开发服务器（localhost:4321） |
-| `pnpm admin` | 启动后台管理系统（localhost:3000） |
-| `pnpm admin:secure` | 使用密码哈希启动后台 |
-| `pnpm admin:set-pwd` | 生成密码哈希 |
+| `pnpm admin` | 启动后台管理系统（localhost:3000，仅绑 127.0.0.1） |
+| `pnpm admin:set-pwd` | 生成密码 SHA-256 哈希 |
+| `pnpm admin:sync-web` | 把 `admin/web/` 前端同步到 `admin/public/` 与 `public/admin/` |
 | `pnpm build` | 构建生产版本到 dist/ |
 | `pnpm new-post <name>` | 创建新文章 |
 | `pnpm new-d <content>` | 创建新动态 |

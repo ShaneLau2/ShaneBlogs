@@ -1,0 +1,24 @@
+{
+	// Cloudflare Worker that provides GitHub OAuth + GitHub API proxy
+	// for the online admin panel. Deploy with:
+	//   pnpm admin-worker:deploy
+	// Secrets (set once with `wrangler secret put`):
+	//   GITHUB_CLIENT_SECRET   the OAuth App client secret
+	//   AUTH_SECRET            random key used to encrypt session cookies
+	"name": "firefly-admin-auth",
+	"main": "src/index.js",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"vars": {
+		// GitHub OAuth App client id (public by design)
+		"GITHUB_CLIENT_ID": "REPLACE_WITH_YOUR_OAUTH_APP_CLIENT_ID",
+		// GitHub login allowed to manage the blog
+		"ADMIN_LOGIN": "ShaneLau2",
+		// Origin of the blog — the admin SPA lives at <APP_URL>/admin/
+		"APP_URL": "https://shanelau2.github.io/ShaneBlogs",
+		// OAuth scope; on the GitHub grant screen select ONLY the blog repo
+		"OAUTH_SCOPE": "repo",
+		// Session lifetime in seconds (24h)
+		"SESSION_TTL": "86400"
+	}
+}
